@@ -28,7 +28,7 @@ public class DungeonSaver {
     private static List<String> roomToList(Room room) {
         List<String> roomData = new ArrayList<>();
         roomData.add(String.valueOf(room.getRoomNumber()));
-        roomData.add(nullToDash(room.getRoomType()));
+        roomData.add(nullToDash(room.getPrerequisite()));
         roomData.add(nullToDash(room.getName()));
         roomData.add(String.valueOf(room.getDoorCount()));
         roomData.add(String.valueOf(room.locked()));

@@ -48,6 +48,7 @@ public class Dungeon {
     private static void mainMenu(DungeonManager org) {
         while(true){
             System.out.println("=== Main Menu ===");
+            System.out.println("Current Room: " + org.getCurrentRoom().getRoomNumber() + " (" + org.getCurrentRoom().getName() + ")");
             System.out.println("Current Position: (" + org.getCurrentPosition()[0] + ", " + org.getCurrentPosition()[1] + ")");
             System.out.println("1. Move to a new room");
             System.out.println("2. View room grid");
@@ -91,7 +92,8 @@ public class Dungeon {
         System.out.println("Room Grid:");
         printDivider(cols);
 
-        for (int[] row : grid) {
+        for (int i = grid[0].length+1; i >= 0; i--) {
+            int[] row = grid[i];
             System.out.print("|");
             for (int cell : row) {
                 System.out.print(" " + cell + " |");

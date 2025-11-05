@@ -24,11 +24,39 @@ public class DungeonManager {
 
     private ArrayList<Room> getRandomRooms(int amount) {
         ArrayList<Room> selectedRooms = new ArrayList<>();
-        for (int i = 0; i < amount; i++) {
+        while (selectedRooms.size() < amount && !unusedRooms.isEmpty()) {
             int index = (int) (Math.random() * unusedRooms.size());
-            selectedRooms.add(unusedRooms.remove(index));
+            Room room = unusedRooms.get(index);
+            if (!selectedRooms.contains(room)) {
+                if (checkPrerequisite(room)) {
+                    selectedRooms.add(unusedRooms.get(index));
+                }
+            }
         }
         return selectedRooms;
+    }
+
+    private boolean checkPrerequisite(Room room) {
+            int row = currentPosition[0];
+            int col = currentPosition[1];
+            int numRows = roomGrid.length-1;
+            int numCols = roomGrid[0].length-1;
+            boolean atEdge = row == 0 || row == numRows || col == 0 || col == numCols;
+            boolean atCorner = (row == 0 && col == 0) || (row == 0 && col == numCols) ||
+                               (row == numRows && col == 0) || (row == numRows && col == numCols);
+            String prereq = room.getPrerequisite();
+            if (prereq == null) {
+                return true;
+            } else if (prereq.equalsIgnoreCase("edge") && atEdge) {
+                return true;
+            } else if (prereq.equalsIgnoreCase("center") && !atEdge) {
+                return true;
+            } else if (prereq.equalsIgnoreCase("NonCornerEdge") && !atCorner && atEdge) {
+                return true;
+            } else {
+                return false;
+            }
+
     }
 
     private Room chooseRoom(ArrayList<Room> selectedRooms) {
@@ -52,6 +80,11 @@ public class DungeonManager {
             direction = getDirectionFromUser();
             unableToMove = updateCurrentPosition(direction);
         }
+        if(roomGrid[currentPosition[0]][currentPosition[1]] != 0){
+            System.out.println("You have already placed a room here.");
+            currentRoom = allRooms.get(roomGrid[currentPosition[0]][currentPosition[1]]-1);
+            return;
+        }
         ArrayList<Room> selectedRooms = getRandomRooms(3);
         for (int i = 0; i < selectedRooms.size(); i++) {
             System.out.println((i + 1) + ": " + selectedRooms.get(i).getName());
@@ -60,6 +93,9 @@ public class DungeonManager {
         unusedRooms.remove(chosenRoom);
         System.out.println("You have chosen: " + chosenRoom.getName());
         roomGrid[currentPosition[0]][currentPosition[1]] = chosenRoom.getRoomNumber();
+        currentPosition[0] = currentPosition[0];
+        currentPosition[1] = currentPosition[1];
+        currentRoom = chosenRoom;
     }
 
     private char getDirectionFromUser() {
@@ -122,6 +158,10 @@ public class DungeonManager {
 
     public int[] getCurrentPosition() {
         return currentPosition;
+    }
+
+    public Room getCurrentRoom() {
+        return currentRoom;
     }
 
     public void loadDungeon() throws IOException {

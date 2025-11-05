@@ -54,7 +54,7 @@ public class DungeonLoader {
 
     private static Room buildRoomFromRow(List<String> row) {
         int roomNumber = Integer.valueOf(row.get(0));
-        String roomType = emptyToNull(row.get(1));
+        String prerequisite = emptyToNull(row.get(1));
         String name = emptyToNull(row.get(2));
         Integer doorCount = Integer.valueOf(row.get(3));
         boolean locked = row.get(4).equalsIgnoreCase("ja") || row.get(4).equalsIgnoreCase("true") ? true : false;
@@ -66,7 +66,7 @@ public class DungeonLoader {
 
         return new Room.Builder()
                 .roomNumber(roomNumber)
-                .roomType(roomType)
+                .prerequisite(prerequisite)
                 .name(name)
                 .doorCount(doorCount)
                 .locked(locked)

@@ -4,7 +4,7 @@ import java.util.List;
 public class Room {
     
     private final int roomNumber;
-    private final String roomType;
+    private final String prerequisite;
     private final String name;
     private final Integer doorCount;
     private final boolean locked;
@@ -18,7 +18,7 @@ public class Room {
 
     private Room(Builder b) {
         this.roomNumber = b.roomNumber;
-        this.roomType = b.roomType;
+        this.prerequisite = b.prerequisite;
         this.name = b.name;
         this.doorCount = b.doorCount;
         this.locked = b.locked;
@@ -51,8 +51,8 @@ public class Room {
         return roomNumber;
     }
 
-    public String getRoomType() {
-        return roomType;
+    public String getPrerequisite() {
+        return prerequisite;
     }
 
     public String getName() {
@@ -104,7 +104,7 @@ public class Room {
     public String toString() {
         return "Room{" +
                 "roomNumber=" + roomNumber +
-                ", roomType='" + roomType + '\'' +
+                ", prerequisite='" + prerequisite + '\'' +
                 ", name='" + name + '\'' +
                 ", doorCount=" + doorCount +
                 ", locked=" + locked +
@@ -130,7 +130,7 @@ public class Room {
 
     public static class Builder {
         private int roomNumber;
-        private String roomType;
+        private String prerequisite;
         private String name;
         private Integer doorCount;
         private boolean locked;
@@ -141,7 +141,7 @@ public class Room {
         private String miniature;
 
         public Builder roomNumber(int v) { this.roomNumber = v; return this; }
-        public Builder roomType(String v) { this.roomType = v; return this; }
+        public Builder prerequisite(String v) { this.prerequisite = v; return this; }
         public Builder name(String v) { this.name = v; return this; }
         public Builder doorCount(Integer v) { this.doorCount = v; return this; }
         public Builder locked(boolean v) { this.locked = v; return this; }
