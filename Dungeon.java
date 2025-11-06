@@ -14,6 +14,7 @@ public class Dungeon {
             System.out.println("=== Welome to the Dungeon Manager ===");
             System.out.println("1. Continue Dungeon");
             System.out.println("2. New Dungeon");
+            System.out.println("3. Delete a save");
             System.out.print("Enter your choice: ");
             String choice = in.nextLine();
             switch (choice) {
@@ -49,6 +50,9 @@ public class Dungeon {
                         break;
                     }
                     break;
+                case "3":
+                    handleDeleteSave(manager, in);               
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
                     validChoice = false;
@@ -67,11 +71,11 @@ public class Dungeon {
             System.out.println("1. Move to a new room");
             System.out.println("2. View room grid");
             System.out.println("3. Print room details");
-            System.out.println( "4. Go to room by number");
-            System.out.println("5. Go to room by coordinates");
-            System.out.println("6. Save and Exit");
-            System.out.println("9. Exit without Saving");
-            System.out.println("0. Delete a save");
+            System.out.println("4. Unlock door");
+            System.out.println("5. Go to room by number");
+            System.out.println("6. Go to room by coordinates");
+            System.out.println("7. Save and Exit");
+            System.out.println("0. Exit without Saving");
             System.out.print("Enter your choice: ");
 
             String choice = in.nextLine();
@@ -87,6 +91,9 @@ public class Dungeon {
                     printWithSeparator(manager.getCurrentRoom().toString());
                     break;
                 case "4":
+                    manager.unlockDoor();
+                    break;
+                case "5":
                     System.out.print("Enter room number: ");
                     int roomNumber = Integer.parseInt(in.nextLine());
                     int result = manager.goToRoomByNumber(roomNumber);
@@ -98,7 +105,7 @@ public class Dungeon {
                         printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
                     }
                     break;
-                case "5":
+                case "6":
                     System.out.print("Enter row: ");
                     int row = Integer.parseInt(in.nextLine());
                     System.out.print("Enter column: ");
@@ -112,7 +119,7 @@ public class Dungeon {
                         printWithSeparator("Invalid coordinates: (" + row + ", " + col + ").");
                     }
                     break;
-                case "6":
+                case "7":
                     printWithSeparator("Which slot do you want to save on (1 to 5): ");
                     String slot = in.nextLine();
                     if(!checkSlot(slot)){
@@ -136,12 +143,9 @@ public class Dungeon {
                         printWithSeparator("An error occurred while saving the dungeon: " + e.getMessage());
                     }
                     break;
-                case "9":
+                case "0":
                     printWithSeparator("Exiting without saving.");
                     System.exit(0);
-                    break;
-                case "0":
-                    handleDeleteSave(manager, in);               
                     break;
                 default:
                     printWithSeparator("Invalid choice. Please try again.");

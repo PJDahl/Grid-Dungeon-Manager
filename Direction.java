@@ -1,8 +1,8 @@
 public enum Direction {
-    N(0, +1, 0),
-    E(1, 0, +1),
-    S(2, -1, 0),
-    W(3, 0, -1);
+    North(0, +1, 0),
+    East(1, 0, +1),
+    South(2, -1, 0),
+    West(3, 0, -1);
 
     private final int index;
     private final int deltaRow;
@@ -16,14 +16,14 @@ public enum Direction {
 
     public Direction opposite() {
         switch (this) {
-            case N:
-                return S;
-            case E:
-                return W;
-            case S:
-                return N;
-            case W:
-                return E;
+            case North:
+                return South;
+            case East:
+                return West;
+            case South:
+                return North;
+            case West:
+                return East;
             default:
                 throw new IllegalStateException("Unexpected value: " + this);
         }
@@ -32,13 +32,13 @@ public enum Direction {
     public static Direction fromChar(char dirChar) {
         switch (Character.toUpperCase(dirChar)) {
             case 'N':
-                return N;
+                return North;
             case 'E':
-                return E;
+                return East;
             case 'S':
-                return S;
+                return South;
             case 'W':
-                return W;
+                return West;
             default:
                 throw new IllegalArgumentException("Invalid direction: " + dirChar);
         }

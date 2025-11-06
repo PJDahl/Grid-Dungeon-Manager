@@ -27,12 +27,12 @@ public class DungeonManager {
         allRooms = DungeonLoader.readRooms("rooms.csv");
         unusedRooms = new ArrayList<>(allRooms);
         Room goal = unusedRooms.remove(0); // Remove the goal room from unused rooms
-        goal.setDoorExists(Direction.N.getIndex(), true); // Ensure goal room has a door to the north
+        goal.setDoorExists(Direction.North.getIndex(), true); // Ensure goal room has a door to the north
         startingRoom = unusedRooms.remove(0); // Remove the starting room from unused rooms and set as current room
-        startingRoom.setDoorExists(Direction.N.getIndex(), true);
-        startingRoom.setDoorExists(Direction.E.getIndex(), true);
-        startingRoom.setDoorExists(Direction.W.getIndex(), true);
-        startingRoom.setDoorExists(Direction.S.getIndex(), true);
+        startingRoom.setDoorExists(Direction.North.getIndex(), true);
+        startingRoom.setDoorExists(Direction.East.getIndex(), true);
+        startingRoom.setDoorExists(Direction.West.getIndex(), true);
+        startingRoom.setDoorExists(Direction.South.getIndex(), true);
         currentRoom = startingRoom;
         currentPosition = new int[]{0, 2}; // Starting position
     }
@@ -83,13 +83,13 @@ public class DungeonManager {
     }
 
     private Room chooseRoom(ArrayList<Room> selectedRooms) {
-        System.out.println("Choose a room by entering its number:");
+        System.out.print("Choose a room by entering its number: ");
         int choice = -1;
         while (choice < 1 || choice > selectedRooms.size()) {
             try {
                 choice = Integer.parseInt(in.nextLine());
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number between 1 and " + selectedRooms.size() + ":");
+                System.out.println("Invalid input. Please enter a number between 1 and " + selectedRooms.size() + ": ");
             }
         }
         Room chosenRoom = selectedRooms.get(choice - 1);
@@ -97,6 +97,7 @@ public class DungeonManager {
     }
 
     public void presentRoomOptions() {
+        System.out.print("Enter direction to move (N/S/E/W): ");
         Direction direction = getDirectionFromUser();
         int[] newPosition = peek(direction, currentPosition[0], currentPosition[1]);
 
@@ -135,7 +136,7 @@ public class DungeonManager {
         }
 
         for (int i = 0; i < roomOptions.size(); i++) {
-            System.out.println((i + 1) + ": " + roomOptions.get(i).getName());
+            System.out.println((i + 1) + ": " + roomOptions.get(i).getName() + " ("+ roomOptions.get(i).getDoorCount()+" doors)");
         }
 
         Room chosenRoom = chooseRoom(roomOptions);
@@ -151,7 +152,6 @@ public class DungeonManager {
     }
 
     private Direction getDirectionFromUser() {
-        System.out.println("Enter direction to move (N/S/E/W):");
         char direction = ' ';
         while (direction != 'N' && direction != 'S' && direction != 'E' && direction != 'W') {
             String input = in.nextLine().toUpperCase();
@@ -195,6 +195,32 @@ public class DungeonManager {
         return row >= 0 && row < roomGrid.length && col >= 0 && col < roomGrid[0].length;
     }
 
+    /*
+     * Methods to handle doors
+     */
+
+    public void unlockDoor() {
+        System.out.print("Enter door to unlock (N/S/E/W): ");
+        Direction direction = getDirectionFromUser();    
+        if (!currentRoom.doesDoorExist(direction.getIndex())) {
+            System.out.println("There is no door to the " + direction + ".");
+            return;
+        }
+
+        if (currentRoom.getBlockedDoors()[direction.getIndex()]) {
+            System.out.println("The doorway to the " + direction + " is blocked and cannot be unlocked.");
+            return;
+        }
+
+        if (!currentRoom.getLockedDoors()[direction.getIndex()]) {
+            System.out.println("The door to the " + direction + " is already unlocked.");
+            return;
+        }
+
+        currentRoom.setLockStatus(direction.getIndex(), false);
+        System.out.println("Unlocked the door to the " + direction + ".");
+    }
+
     private void setDoorsInNewRoom(Room newRoom, Direction from, int row, int col) {
         newRoom.setDoorExists(from.opposite().getIndex(), true);
 
@@ -213,30 +239,33 @@ public class DungeonManager {
         int doorsToSet = newRoom.getDoorCount() - 1; // One door is already set
         List<Direction> blockedCandidates = new ArrayList<>();
 
-        for (Direction dir : options) {
+        for (Direction direction : options) {
             if (doorsToSet <= 0) break;
 
-            int[] adjacentPos = peek(dir, row, col);
+            int[] adjacentPos = peek(direction, row, col);
             int neighborRoomNum = roomGrid[adjacentPos[0]][adjacentPos[1]];
             if (neighborRoomNum == 0) {
-                newRoom.setDoorExists(dir.getIndex(), true);
+                newRoom.setDoorExists(direction.getIndex(), true);
                 if(newRoom.locked()) {
-                    newRoom.setLockStatus(dir.getIndex(), true);
+                    newRoom.setLockStatus(direction.getIndex(), true);
                 }
                 doorsToSet--;
             } else {
                 Room neighborRoom = allRooms.get(neighborRoomNum - 1);
-                if (neighborRoom.doesDoorExist(dir.opposite().getIndex())) {
-                    newRoom.setDoorExists(dir.getIndex(), true);
+                if (neighborRoom.doesDoorExist(direction.opposite().getIndex())) {
+                    newRoom.setDoorExists(direction.getIndex(), true);
+                    if (neighborRoom.getLockedDoors()[direction.opposite().getIndex()]){
+                        neighborRoom.setLockStatus(direction.opposite().getIndex(), false);
+                    }
                     doorsToSet--;
                 } else {
                     int roll = (int)(Math.random() * 100) + 1;
                     if (roll <= BLOCKED_DOOR_CHANCE) {
-                        newRoom.setDoorExists(dir.getIndex(), true);
-                        newRoom.setBlockedDoor(dir.getIndex(), true);
+                        newRoom.setDoorExists(direction.getIndex(), true);
+                        newRoom.setBlockedDoor(direction.getIndex(), true);
                         doorsToSet--;
                     } else {
-                        blockedCandidates.add(dir);
+                        blockedCandidates.add(direction);
                     }
                 }       
             }
@@ -274,7 +303,7 @@ public class DungeonManager {
         String[] dirLabels = {"North", "East", "South", "West"};
 
         boolean[] doors = room.getDoors();
-        boolean[] blocked = room.getBlockedDoors();   // your new field
+        boolean[] blocked = room.getBlockedDoors();
         boolean[] locked = room.getLockedDoors();
 
         boolean first = true;
@@ -288,7 +317,7 @@ public class DungeonManager {
             sb.append(dirLabels[dir.getIndex()]);
             
             sb.append("(");
-            if(room.equals(startingRoom) && dir == Direction.S) {
+            if(room.equals(startingRoom) && dir == Direction.South) {
                 sb.append("Outside (Entrance)");
                 sb.append(")");
                 continue;
