@@ -18,9 +18,19 @@ public class Dungeon {
             String choice = in.nextLine();
             switch (choice) {
                 case "1":
+                    printWithSeparator("Which slot do you want to load (1 to 5): ");
+                    String slot = in.nextLine();
+                    if(!checkSlot(slot)){
+                        printWithSeparator(slot + " is not a valid slot.");
+                        break;
+                    }
+                    if(manager.emptySlot(slot)){
+                        printWithSeparator(slot + " is empty.");
+                        break;
+                    }
                     System.out.println("Continuing existing dungeon...");
                     try {
-                        manager.loadDungeon();
+                        manager.loadDungeon(slot);
                         mainMenu(manager, in);
                         validChoice = true;
                     } catch (IOException e) {
@@ -61,6 +71,7 @@ public class Dungeon {
             System.out.println("5. Go to room by coordinates");
             System.out.println("6. Save and Exit");
             System.out.println("9. Exit without Saving");
+            System.out.println("0. Delete a save");
             System.out.print("Enter your choice: ");
 
             String choice = in.nextLine();
@@ -73,51 +84,118 @@ public class Dungeon {
                     printGrid(manager.getRoomGrid());
                     break;
                 case "3":
-                    System.out.println(manager.getCurrentRoom());
+                    printWithSeparator(manager.getCurrentRoom().toString());
                     break;
                 case "4":
-                    //todo: implement go to room by number
+                    System.out.print("Enter room number: ");
+                    int roomNumber = Integer.parseInt(in.nextLine());
+                    int result = manager.goToRoomByNumber(roomNumber);
+                    if(result == -1){
+                        printWithSeparator("Invalid room number: " + roomNumber);
+                    } else if(result == 1){
+                        printWithSeparator("Moved to room number: " + roomNumber);
+                    } else {
+                        printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
+                    }
                     break;
                 case "5":
-                    //todo: implement go to room by coordinates
+                    System.out.print("Enter row: ");
+                    int row = Integer.parseInt(in.nextLine());
+                    System.out.print("Enter column: ");
+                    int col = Integer.parseInt(in.nextLine());
+                    int moveResult = manager.goToRoomByCoordinates(row, col);
+                    if(moveResult == 1){
+                        printWithSeparator("Moved to room at (" + row + ", " + col + ").");
+                    } else if(moveResult == 0){
+                        printWithSeparator("No room exists at (" + row + ", " + col + ").");
+                    } else {
+                        printWithSeparator("Invalid coordinates: (" + row + ", " + col + ").");
+                    }
                     break;
                 case "6":
+                    printWithSeparator("Which slot do you want to save on (1 to 5): ");
+                    String slot = in.nextLine();
+                    if(!checkSlot(slot)){
+                        printWithSeparator("Not a valid slot");
+                        break;
+                    }
+                    if(!manager.emptySlot(slot)){
+                        printWithSeparator("Slot is already taken. Do you want to overwrite it? YES to confirm");
+                        String opt = in.nextLine();
+                        if(!opt.equalsIgnoreCase("yes")){
+                            System.out.println("Cancelling...");
+                            break;
+                        }
+                    }
                     System.out.println("Saving dungeon...");
                     try {
-                        manager.saveDungeon();
+                        manager.saveDungeon(slot);
                         System.out.println("Exiting the manager.");
                         System.exit(0);
                     } catch (IOException e) {
-                        System.out.println("An error occurred while saving the dungeon: " + e.getMessage());
+                        printWithSeparator("An error occurred while saving the dungeon: " + e.getMessage());
                     }
                     break;
                 case "9":
-                    System.out.println("Exiting without saving.");
+                    printWithSeparator("Exiting without saving.");
                     System.exit(0);
                     break;
+                case "0":
+                    handleDeleteSave(manager, in);               
+                    break;
                 default:
-                    System.out.println("Invalid choice. Please try again.");
+                    printWithSeparator("Invalid choice. Please try again.");
             }
         }
     }
 
-    //Useful for later enhancements
-    private static int[] findRoomPosition(int[][] grid, int roomNumber) {
-        for (int row = 0; row < grid.length; row++) {
-            for (int col = 0; col < grid[0].length; col++) {
-                if (grid[row][col] == roomNumber) {
-                    return new int[]{row, col};
-                }
-            }
+    private static void handleDeleteSave(DungeonManager manager, Scanner in) {
+        printWithSeparator("Which save slot do you want to delete? (1..5)");
+        String slot = in.nextLine().trim();
+        if(!checkSlot(slot)){
+            printWithSeparator(slot + " is not a valid slot.");
+            return;
         }
-        return null;
+        if(manager.emptySlot(slot)){
+            printWithSeparator(slot + " is already empty.");
+            return;
+        }
+
+        System.out.print("Are you sure you want to delete " + slot + "? Type YES to confirm: ");
+        String confirm = in.nextLine().trim();
+        if (!"YES".equalsIgnoreCase(confirm)) {
+            System.out.println("Cancelled.");
+            return;
+        }
+        try {
+            boolean any = DungeonSaver.deleteSaves("saves", slot);
+            if (any) {
+                printWithSeparator("Save files deleted.");
+            } else {
+                printWithSeparator("Deletion failed.");
+            }
+        } catch (IOException e) {
+            printWithSeparator("Error while deleting: " + e.getMessage());
+        }
+    }
+
+    private static boolean checkSlot(String slot) {
+        try{   
+            int s = Integer.parseInt(slot);
+            if ( s < 1 || s > 5){
+                return false;
+            }
+            return true;
+        } catch (NumberFormatException e){
+            return false;
+        }
     }
 
     private static void printGrid(int[][] grid) {
         int rows = grid.length;
         int cols = grid[0].length;
 
-        printDivider(cols);
+        System.out.println("\n=====================================");
         System.out.println("Room Grid:");
         printDivider(cols);
         for (int r = rows - 1; r >= 0; r--) {
@@ -128,6 +206,7 @@ public class Dungeon {
             System.out.println();
             printDivider(cols);
         }
+        System.out.println("=====================================\n");
     }
 
     private static void printDivider(int cols) {
@@ -135,5 +214,11 @@ public class Dungeon {
             System.out.print("----");
         }
         System.out.println("-");
+    }
+
+    private static void printWithSeparator(String message) {
+        System.out.println("\n=====================================");
+        System.out.println(message);
+        System.out.println("=====================================\n");
     }
 }

@@ -13,6 +13,7 @@ public class DungeonManager {
     private Room startingRoom;
     private final Scanner in;
     private final int BLOCKED_DOOR_CHANCE = 33; // Percentage chance to block a door between rooms
+    private final String SAVE_DIRECTORY = "saves/";
 
      /*
       * Dungeon initialization and room management
@@ -295,15 +296,64 @@ public class DungeonManager {
         return sb.toString();
     }
 
+    /*
+     * Room navigation by room number
+     * returns:
+     * 1 if successful 
+     * 0 if room number not found
+     * -1 if invalid room number
+     */
+
+    public int goToRoomByNumber(int roomNumber) {
+        if (roomNumber < 1 || roomNumber > allRooms.size()) {
+            return -1;
+        }
+        for (int r = 0; r < roomGrid.length; r++) {
+            for (int c = 0; c < roomGrid[0].length; c++) {
+                if (roomGrid[r][c] == roomNumber) {
+                    currentPosition[0] = r;
+                    currentPosition[1] = c;
+                    currentRoom = allRooms.get(roomNumber - 1);
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
+    /*
+     * Room navigation by coordinates
+     * returns:
+     * 1 if successful
+     * 0 if no room at coordinates
+     * -1 if out of bounds
+     */
+
+    public int goToRoomByCoordinates(int row, int col) {
+        if (isInBounds(row, col)) {
+            int roomNumber = roomGrid[row][col];
+            if (roomNumber != 0) {
+                currentPosition[0] = row;
+                currentPosition[1] = col;
+                currentRoom = allRooms.get(roomNumber - 1);
+                return 1;
+            } else {
+                return 0;
+            }
+        } else {
+            return -1;
+        }
+    }
+
 
     /*
      * Dungeon loading and saving
      */
 
-    public void loadDungeon() throws IOException {
-        allRooms = DungeonLoader.readRooms("allRooms.csv");
-        unusedRooms = DungeonLoader.readRooms("unusedRooms.csv");
-        DungeonLoader.GridData data = DungeonLoader.readGrid("roomGrid.csv");
+    public void loadDungeon(String slot) throws IOException {
+        allRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
+        unusedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv");
+        DungeonLoader.GridData data = DungeonLoader.readGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv");
         roomGrid = data.grid;
         currentPosition = data.position;
         currentRoom = allRooms.get(roomGrid[currentPosition[0]][currentPosition[1]]-1);
@@ -315,10 +365,16 @@ public class DungeonManager {
         
     }
 
-    public void saveDungeon() throws IOException {
-        DungeonSaver.saveRooms("allRooms.csv", allRooms);
-        DungeonSaver.saveRooms("unusedRooms.csv", unusedRooms);
-        DungeonSaver.saveGrid("roomGrid.csv", roomGrid, currentPosition);
+    public void saveDungeon(String slot) throws IOException {
+        DungeonSaver.saveRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv", allRooms);
+        DungeonSaver.saveRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv", unusedRooms);
+        DungeonSaver.saveGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv", roomGrid, currentPosition);
     }
-    
+
+    public boolean emptySlot(String slot) {
+        boolean all = DungeonSaver.emptySlot(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
+        boolean unused = DungeonSaver.emptySlot(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv");
+        boolean grid = DungeonSaver.emptySlot(SAVE_DIRECTORY + "roomGrid" + slot + ".csv");
+        return all && unused && grid;
+    }
 }

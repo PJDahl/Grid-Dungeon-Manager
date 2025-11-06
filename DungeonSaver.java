@@ -1,6 +1,9 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -93,5 +96,25 @@ public class DungeonSaver {
             bw.flush();
         }
     }
-    
+
+    public static boolean deleteSaves(String directory, String slot) throws IOException {
+        Path dir = directory == null ? Paths.get("") : Paths.get(directory);
+        Path pAll   = dir.resolve("allRooms" + slot + ".csv");
+        Path pUnused= dir.resolve("unusedRooms" + slot + ".csv");
+        Path pGrid  = dir.resolve("roomGrid" + slot + ".csv");
+
+        boolean any = false;
+        any |= Files.deleteIfExists(pAll);
+        any |= Files.deleteIfExists(pUnused);
+        any |= Files.deleteIfExists(pGrid);
+        return any;
+    }
+
+    public static boolean emptySlot(String file) {
+        Path allRoomPath = Paths.get(file);
+        if (Files.exists(allRoomPath)) {
+            return false;
+        }
+        return true;
+    }
 }
