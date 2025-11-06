@@ -1,9 +1,11 @@
+import java.util.Arrays;
+
 public class Room {
     
     private final int roomNumber;
     private final String prerequisite;
     private final String name;
-    private final Integer doorCount;
+    private final int doorCount;
     private final boolean locked;
     private final String description;
     private final String danger;
@@ -12,7 +14,7 @@ public class Room {
     private final String miniature;
     private boolean[] lockedDoors = new boolean[4]; // Array to represent locked status of doors in directions N(0), E(1), S(2), W(3)
     private boolean[] doors = new boolean[4]; // Array to represent existence of doors in directions N(0), E(1), S(2), W(3)
-    private boolean[] blockedDoor = new boolean[4]; // Array to represent blocked status of doors in directions N(0), E(1), S(2), W(3)
+    private boolean[] blockedDoors = new boolean[4]; // Array to represent blocked status of doors in directions N(0), E(1), S(2), W(3)
     private String connections; // e.g., "N,E,S,W" to indicate open connections
 
     private Room(Builder b) {
@@ -58,19 +60,21 @@ public class Room {
 
     public void setDoors(boolean[] doorLayout) {
         if (doorLayout != null && doorLayout.length == doors.length) {
-            doors = doorLayout;
+            doors = Arrays.copyOf(doorLayout, doorLayout.length);
+            updateConnections();
         }
     }
 
     public void setDoorExists(int directionIndex, boolean exists) {
         if (directionIndex>= 0 && directionIndex < doors.length) {
             doors[directionIndex] = exists;
+            updateConnections();
         }
     }
 
     public void setBlockedDoor(int directionIndex, boolean blocked) {
-        if (directionIndex >= 0 && directionIndex < blockedDoor.length) {
-            blockedDoor[directionIndex] = blocked;
+        if (directionIndex >= 0 && directionIndex < blockedDoors.length) {
+            blockedDoors[directionIndex] = blocked;
         }
     }
 
@@ -119,11 +123,11 @@ public class Room {
     }
 
     public boolean[] getLockedDoors() {
-        return lockedDoors;
+        return Arrays.copyOf(lockedDoors, lockedDoors.length);
     }
 
     public boolean[] getDoors() {
-        return doors;
+        return Arrays.copyOf(doors, doors.length);
     }
 
     public String getConnections() {
@@ -131,7 +135,7 @@ public class Room {
     }
 
     public boolean[] getBlockedDoors() {
-        return blockedDoor;
+        return Arrays.copyOf(blockedDoors, blockedDoors.length);
     }
 
     /*
@@ -161,6 +165,11 @@ public class Room {
         if (!(o instanceof Room)) return false;
         Room room = (Room) o;
         return roomNumber == room.roomNumber;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(roomNumber);
     }
 
     /*
