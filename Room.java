@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.List;
-
 public class Room {
     
     private final int roomNumber;
@@ -14,6 +11,8 @@ public class Room {
     private final String specialEffect;
     private final String miniature;
     private boolean[] lockedDoors = new boolean[4]; // Array to represent locked status of doors in directions N(0), E(1), S(2), W(3)
+    private boolean[] doors = new boolean[4]; // Array to represent existence of doors in directions N(0), E(1), S(2), W(3)
+    private boolean[] blockedDoor = new boolean[4]; // Array to represent blocked status of doors in directions N(0), E(1), S(2), W(3)
     private String connections; // e.g., "N,E,S,W" to indicate open connections
 
     private Room(Builder b) {
@@ -29,6 +28,24 @@ public class Room {
         this.miniature = b.miniature;
     }
 
+    public boolean doesDoorExist(int directionIndex) {
+        return directionIndex >= 0 && directionIndex < doors.length && doors[directionIndex];
+    }
+
+    public void updateConnections() {
+        StringBuilder sb = new StringBuilder();
+        String[] dirLabels = {"N", "E", "S", "W"};
+        for (int i = 0; i < doors.length; i++) {
+            if (doors[i]) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append(dirLabels[i]);
+            }
+        }
+        connections = sb.toString();
+    }
+
     /* 
      * Setters
      */
@@ -39,8 +56,22 @@ public class Room {
         }
     }
 
-    public void setConnections(String connections) {
-        this.connections = connections;
+    public void setDoors(boolean[] doorLayout) {
+        if (doorLayout != null && doorLayout.length == doors.length) {
+            doors = doorLayout;
+        }
+    }
+
+    public void setDoorExists(int directionIndex, boolean exists) {
+        if (directionIndex>= 0 && directionIndex < doors.length) {
+            doors[directionIndex] = exists;
+        }
+    }
+
+    public void setBlockedDoor(int directionIndex, boolean blocked) {
+        if (directionIndex >= 0 && directionIndex < blockedDoor.length) {
+            blockedDoor[directionIndex] = blocked;
+        }
     }
 
     /* 
@@ -91,8 +122,16 @@ public class Room {
         return lockedDoors;
     }
 
+    public boolean[] getDoors() {
+        return doors;
+    }
+
     public String getConnections() {
         return connections;
+    }
+
+    public boolean[] getBlockedDoors() {
+        return blockedDoor;
     }
 
     /*
