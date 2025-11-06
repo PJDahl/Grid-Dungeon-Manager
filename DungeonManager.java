@@ -43,14 +43,14 @@ public class DungeonManager {
         roomGrid[0][2] = 2; // Start at position (0, 2)
     }
 
-    private ArrayList<Room> getRandomRooms(int amount) {
+    private ArrayList<Room> getRandomRooms(int amount, int[] targetCoordinates) {
         ArrayList<Room> pool = new ArrayList<>(unusedRooms);
         ArrayList<Room> selectedRooms = new ArrayList<>();
 
         Collections.shuffle(pool);
 
         for (Room room : pool) {
-            if (checkPrerequisite(room)) {
+            if (checkPrerequisite(room, targetCoordinates)) {
                 selectedRooms.add(room);
                 if (selectedRooms.size() >= amount) {
                     break;
@@ -60,9 +60,9 @@ public class DungeonManager {
         return selectedRooms;
     }
 
-    private boolean checkPrerequisite(Room room) {
-            int row = currentPosition[0];
-            int col = currentPosition[1];
+    private boolean checkPrerequisite(Room room, int[] targetCoordinates) {
+            int row = targetCoordinates[0];
+            int col = targetCoordinates[1];
             int numRows = roomGrid.length-1;
             int numCols = roomGrid[0].length-1;
             boolean atEdge = row == 0 || row == numRows || col == 0 || col == numCols;
@@ -80,7 +80,6 @@ public class DungeonManager {
             } else {
                 return false;
             }
-
     }
 
     private Room chooseRoom(ArrayList<Room> selectedRooms) {
@@ -98,53 +97,57 @@ public class DungeonManager {
     }
 
     public void presentRoomOptions() {
-        while (true) {
-            Direction direction = getDirectionFromUser();
-            int[] newPosition = peek(direction, currentPosition[0], currentPosition[1]);
+        Direction direction = getDirectionFromUser();
+        int[] newPosition = peek(direction, currentPosition[0], currentPosition[1]);
 
-            if (!isInBounds(newPosition[0], newPosition[1])) {
-                System.out.println("Cannot move" + direction +". You're at the edge of the grid.");
-                continue;
-            }
-
-            if(!currentRoom.doesDoorExist(direction.getIndex())) {
-                System.out.println("No door to the " + direction + ". Please choose another direction.");
-                continue;
-            }
-
-            int nextRoomNumber = roomGrid[newPosition[0]][newPosition[1]];
-            if (nextRoomNumber != 0) {
-                if(currentRoom.getBlockedDoors()[direction.getIndex()]) {
-                    System.out.println("The door to the " + direction + " is blocked. You cannot pass through.");
-                    continue;
-                }
-                currentPosition = newPosition;
-                currentRoom = allRooms.get(nextRoomNumber - 1);
-                System.out.println("Moved to room " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ").");
-                break;
-            }
-
-            ArrayList<Room> roomOptions = getRandomRooms(3);
-            if (roomOptions.isEmpty()) {
-                System.out.println("No available rooms meet the prerequisites going " + direction + ". Try another direction.");
-                continue;
-            }
-
-            for (int i = 0; i < roomOptions.size(); i++) {
-                System.out.println((i + 1) + ": " + roomOptions.get(i).getName());
-            }
-
-            Room chosenRoom = chooseRoom(roomOptions);
-            unusedRooms.remove(chosenRoom);
-            roomGrid[newPosition[0]][newPosition[1]] = chosenRoom.getRoomNumber();
-            setDoorsInNewRoom(chosenRoom, direction, newPosition[0], newPosition[1]);
-            
-            currentPosition = newPosition;
-            currentRoom = chosenRoom;
-
-            System.out.println("You moved " + direction +" into: " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ").");
-            break;
+        if (!isInBounds(newPosition[0], newPosition[1])) {
+            System.out.println("Cannot move " + direction +". You're at the edge of the grid.");
+            return;
         }
+
+        if(!currentRoom.doesDoorExist(direction.getIndex())) {
+            System.out.println("No door to the " + direction + ". Please choose another direction.");
+            return;
+        }
+
+        int nextRoomNumber = roomGrid[newPosition[0]][newPosition[1]];
+        if (nextRoomNumber != 0) {
+            if(currentRoom.getBlockedDoors()[direction.getIndex()]) {
+                System.out.println("The door to the " + direction + " is blocked. You cannot pass through.");
+                return;
+            }
+            currentPosition = newPosition;
+            currentRoom = allRooms.get(nextRoomNumber - 1);
+            System.out.println("Moved to room " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ").");
+            return;
+        }
+
+        boolean[] locked = currentRoom.getLockedDoors();
+        if (locked[direction.getIndex()]) {
+            System.out.println("The door to the " + direction + " is locked.");
+            return;
+        }
+
+        ArrayList<Room> roomOptions = getRandomRooms(3, newPosition);
+        if (roomOptions.isEmpty()) {
+            System.out.println("No available rooms meet the prerequisites going " + direction + ". Try another direction.");
+            return;
+        }
+
+        for (int i = 0; i < roomOptions.size(); i++) {
+            System.out.println((i + 1) + ": " + roomOptions.get(i).getName());
+        }
+
+        Room chosenRoom = chooseRoom(roomOptions);
+        unusedRooms.remove(chosenRoom);
+        roomGrid[newPosition[0]][newPosition[1]] = chosenRoom.getRoomNumber();
+        setDoorsInNewRoom(chosenRoom, direction, newPosition[0], newPosition[1]);
+        
+        currentPosition = newPosition;
+        currentRoom = chosenRoom;
+
+        System.out.println("You moved " + direction +" into: " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ").");
+        return;
     }
 
     private Direction getDirectionFromUser() {
@@ -245,6 +248,20 @@ public class DungeonManager {
                 newRoom.setDoorExists(dir.getIndex(), true);
                 newRoom.setBlockedDoor(dir.getIndex(), true);
                 doorsToSet--;
+            }
+        }
+
+        for (Direction direction : Direction.values()) {
+            int[] adjacentPos = peek(direction, row, col);
+            if (isInBounds(adjacentPos[0], adjacentPos[1])){
+                int neighborNum = roomGrid[adjacentPos[0]][adjacentPos[1]];
+                if (neighborNum != 0) {
+                    Room neighbor = allRooms.get(neighborNum - 1);
+                    int neighborDoorIndex = direction.opposite().getIndex();
+                    if (neighbor.doesDoorExist(neighborDoorIndex) && !newRoom.doesDoorExist(direction.getIndex())) {
+                        neighbor.setBlockedDoor(neighborDoorIndex, true);
+                    }
+                }
             }
         }
 
