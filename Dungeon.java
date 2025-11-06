@@ -1,16 +1,12 @@
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class Dungeon {
 
     public static void main(String[] args) {
-        System.setOut(new java.io.PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8));
-        System.setErr(new java.io.PrintStream(System.err, true, java.nio.charset.StandardCharsets.UTF_8));
 
-        
         boolean validChoice = false;
-        Scanner in = new Scanner(System.in, StandardCharsets.UTF_8);
+        Scanner in = new Scanner(System.in);
         DungeonManager manager = new DungeonManager(in);
 
         while(!validChoice){
@@ -61,7 +57,9 @@ public class Dungeon {
             System.out.println("1. Move to a new room");
             System.out.println("2. View room grid");
             System.out.println("3. Print room details");
-            System.out.println("4. Save and Exit");
+            System.out.println( "4. Go to room by number");
+            System.out.println("5. Go to room by coordinates");
+            System.out.println("6. Save and Exit");
             System.out.println("9. Exit without Saving");
             System.out.print("Enter your choice: ");
 
@@ -78,6 +76,12 @@ public class Dungeon {
                     System.out.println(manager.getCurrentRoom());
                     break;
                 case "4":
+                    //todo: implement go to room by number
+                    break;
+                case "5":
+                    //todo: implement go to room by coordinates
+                    break;
+                case "6":
                     System.out.println("Saving dungeon...");
                     try {
                         manager.saveDungeon();
