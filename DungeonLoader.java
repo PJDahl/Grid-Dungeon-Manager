@@ -2,7 +2,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DungeonLoader {
 
@@ -142,5 +144,56 @@ public class DungeonLoader {
             this.grid = grid;
             this.position = position;
         }
+    }
+
+    /*
+     * Methods to read doors from a csv file
+     */
+    public static void loadRoomState(String filename, ArrayList<Room> allRooms) throws IOException {
+        Map<Integer, Room> byId = new HashMap<>();
+        for (Room room : allRooms){
+            byId.put(room.getRoomNumber(), room);
+        }
+            
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            br.readLine(); // skip header
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.isBlank()) continue;
+                String[] roomArray = line.split(",", -1);
+                if (roomArray.length < 4) continue;
+
+                int roomNum = Integer.parseInt(roomArray[0].trim());
+                Room room = byId.get(roomNum);
+                if (room != null) {
+                    boolean[] doors   = bitsToBools(roomArray[1].trim());
+                    boolean[] blocked = bitsToBools(roomArray[2].trim());
+                    boolean[] locked  = bitsToBools(roomArray[3].trim());
+
+                    room.setDoors(doors);
+
+                    for (int i = 0; i < 4; i++) {
+                        room.setBlockedDoor(i, blocked[i]);
+                        room.setLockStatus(i, locked[i]);
+                    }
+
+                    room.updateConnections();
+                }
+            }
+        } catch (java.io.FileNotFoundException e) {
+            System.out.println("No file found to read rooms: " + e);
+        }
+    }
+
+    private static boolean[] bitsToBools(String s) {
+        boolean[] out = new boolean[4];
+        if (s != null) {
+            s = s.trim();
+            for (int i = 0; i < 4 && i < s.length(); i++) {
+                out[i] = s.charAt(i) == '1';
+            }
+        } 
+        return out;
     }
 }

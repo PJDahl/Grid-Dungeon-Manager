@@ -97,24 +97,57 @@ public class DungeonSaver {
         }
     }
 
+    public static void saveRoomState(String filename, ArrayList<Room> rooms) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
+            bw.write("Room,Doors,Blocked,Locked");
+            bw.newLine();
+
+            for (Room r : rooms) {
+                boolean[] doors   = r.getDoors();
+                boolean[] blocked = r.getBlockedDoors();
+                boolean[] locked  = r.getLockedDoors();
+
+                if (anyTrue(doors) || anyTrue(blocked) || anyTrue(locked)){
+                    String row = r.getRoomNumber() + "," +
+                                boolsToBits(doors) + "," +
+                                boolsToBits(blocked) + "," +
+                                boolsToBits(locked);
+                    bw.write(row);
+                    bw.newLine();
+                }
+            }
+            bw.flush();
+        }
+    }
+
+    private static boolean anyTrue(boolean[] a) {
+        for (boolean b : a) if (b) return true;
+        return false;
+    }
+
+    private static String boolsToBits(boolean[] a) {
+        StringBuilder sb = new StringBuilder(4);
+        for (boolean b : a) sb.append(b ? '1' : '0');
+        return sb.toString();
+    }
+
+
     public static boolean deleteSaves(String directory, String slot) throws IOException {
         Path dir = directory == null ? Paths.get("") : Paths.get(directory);
-        Path pAll   = dir.resolve("allRooms" + slot + ".csv");
-        Path pUnused= dir.resolve("unusedRooms" + slot + ".csv");
-        Path pGrid  = dir.resolve("roomGrid" + slot + ".csv");
+        Path pathAll   = dir.resolve("allRooms" + slot + ".csv");
+        Path pathUnused= dir.resolve("unusedRooms" + slot + ".csv");
+        Path pathGrid  = dir.resolve("roomGrid" + slot + ".csv");
+        Path pathState  = dir.resolve("roomState" + slot + ".csv");
 
         boolean any = false;
-        any |= Files.deleteIfExists(pAll);
-        any |= Files.deleteIfExists(pUnused);
-        any |= Files.deleteIfExists(pGrid);
+        any |= Files.deleteIfExists(pathAll);
+        any |= Files.deleteIfExists(pathUnused);
+        any |= Files.deleteIfExists(pathGrid);
+        any |= Files.deleteIfExists(pathState);
         return any;
     }
 
     public static boolean emptySlot(String file) {
-        Path allRoomPath = Paths.get(file);
-        if (Files.exists(allRoomPath)) {
-            return false;
-        }
-        return true;
+        return !Files.exists(Paths.get(file));
     }
 }

@@ -371,6 +371,7 @@ public class DungeonManager {
         allRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
         unusedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv");
         DungeonLoader.GridData data = DungeonLoader.readGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv");
+        DungeonLoader.loadRoomState(SAVE_DIRECTORY + "roomstate" + slot + ".csv", allRooms);
         roomGrid = data.grid;
         currentPosition = data.position;
         currentRoom = allRooms.get(roomGrid[currentPosition[0]][currentPosition[1]]-1);
@@ -379,19 +380,20 @@ public class DungeonManager {
     public void newDungeon() throws IOException {
         initializeNewRooms();
         initializeNewGrid(7, 5, 4, 2);
-        
     }
 
     public void saveDungeon(String slot) throws IOException {
         DungeonSaver.saveRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv", allRooms);
         DungeonSaver.saveRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv", unusedRooms);
         DungeonSaver.saveGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv", roomGrid, currentPosition);
+        DungeonSaver.saveRoomState(SAVE_DIRECTORY + "roomState" + slot + ".csv", allRooms);
     }
 
     public boolean emptySlot(String slot) {
         boolean all = DungeonSaver.emptySlot(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
         boolean unused = DungeonSaver.emptySlot(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv");
         boolean grid = DungeonSaver.emptySlot(SAVE_DIRECTORY + "roomGrid" + slot + ".csv");
-        return all && unused && grid;
+        boolean state = DungeonSaver.emptySlot(SAVE_DIRECTORY + "roomState" + slot + ".csv");
+        return all && unused && grid && state;
     }
 }
