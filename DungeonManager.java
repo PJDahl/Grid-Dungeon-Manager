@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class DungeonManager {
-    private int[][] roomGrid;
+    private int[][] houseGrid;
     private ArrayList<Room> unusedRooms;
     private ArrayList<Room> allRooms;
     private int[] currentPosition;
@@ -38,9 +38,9 @@ public class DungeonManager {
     }
 
     public void initializeNewGrid(int i, int j, int k, int l) {
-        roomGrid = new int[i][j];
-        roomGrid[k][l] = 1; // Goal at position (k, l)
-        roomGrid[0][2] = 2; // Start at position (0, 2)
+        houseGrid = new int[i][j];
+        houseGrid[k][l] = 1; // Goal at position (k, l)
+        houseGrid[0][2] = 2; // Start at position (0, 2)
     }
 
     private ArrayList<Room> getRandomRooms(int amount, int[] targetCoordinates) {
@@ -63,8 +63,8 @@ public class DungeonManager {
     private boolean checkPrerequisite(Room room, int[] targetCoordinates) {
             int row = targetCoordinates[0];
             int col = targetCoordinates[1];
-            int numRows = roomGrid.length-1;
-            int numCols = roomGrid[0].length-1;
+            int numRows = houseGrid.length-1;
+            int numCols = houseGrid[0].length-1;
             boolean atEdge = row == 0 || row == numRows || col == 0 || col == numCols;
             boolean atCorner = (row == 0 && col == 0) || (row == 0 && col == numCols) ||
                                (row == numRows && col == 0) || (row == numRows && col == numCols);
@@ -111,14 +111,14 @@ public class DungeonManager {
             return;
         }
 
-        int nextRoomNumber = roomGrid[newPosition[0]][newPosition[1]];
+        int nextRoomNumber = houseGrid[newPosition[0]][newPosition[1]];
         if (nextRoomNumber != 0) {
             if(currentRoom.getBlockedDoors()[direction.getIndex()]) {
                 System.out.println("The door to the " + direction + " is blocked. You cannot pass through.");
                 return;
             }
             currentPosition = newPosition;
-            currentRoom = allRooms.get(nextRoomNumber - 1);
+            currentRoom = getRoom(nextRoomNumber);
             System.out.println("Moved to room " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ").");
             return;
         }
@@ -141,7 +141,7 @@ public class DungeonManager {
 
         Room chosenRoom = chooseRoom(roomOptions);
         unusedRooms.remove(chosenRoom);
-        roomGrid[newPosition[0]][newPosition[1]] = chosenRoom.getRoomNumber();
+        houseGrid[newPosition[0]][newPosition[1]] = chosenRoom.getRoomNumber();
         setDoorsInNewRoom(chosenRoom, direction, newPosition[0], newPosition[1]);
         
         currentPosition = newPosition;
@@ -165,8 +165,12 @@ public class DungeonManager {
         return Direction.fromChar(direction);
     }
 
-    public int[][] getRoomGrid() {
-        return roomGrid;
+    public int[][] getHouseGrid() {
+        return houseGrid;
+    }
+
+    public Room getRoom(int roomNumber){
+        return allRooms.get(roomNumber-1);
     }
 
     public int[] getCurrentPosition() {
@@ -192,7 +196,7 @@ public class DungeonManager {
     }
 
     private boolean isInBounds(int row, int col) {
-        return row >= 0 && row < roomGrid.length && col >= 0 && col < roomGrid[0].length;
+        return row >= 0 && row < houseGrid.length && col >= 0 && col < houseGrid[0].length;
     }
 
     /*
@@ -243,7 +247,7 @@ public class DungeonManager {
             if (doorsToSet <= 0) break;
 
             int[] adjacentPos = peek(direction, row, col);
-            int neighborRoomNum = roomGrid[adjacentPos[0]][adjacentPos[1]];
+            int neighborRoomNum = houseGrid[adjacentPos[0]][adjacentPos[1]];
             if (neighborRoomNum == 0) {
                 newRoom.setDoorExists(direction.getIndex(), true);
                 if(newRoom.locked()) {
@@ -251,7 +255,7 @@ public class DungeonManager {
                 }
                 doorsToSet--;
             } else {
-                Room neighborRoom = allRooms.get(neighborRoomNum - 1);
+                Room neighborRoom = getRoom(neighborRoomNum);
                 if (neighborRoom.doesDoorExist(direction.opposite().getIndex())) {
                     newRoom.setDoorExists(direction.getIndex(), true);
                     if (neighborRoom.getLockedDoors()[direction.opposite().getIndex()]){
@@ -283,9 +287,9 @@ public class DungeonManager {
         for (Direction direction : Direction.values()) {
             int[] adjacentPos = peek(direction, row, col);
             if (isInBounds(adjacentPos[0], adjacentPos[1])){
-                int neighborNum = roomGrid[adjacentPos[0]][adjacentPos[1]];
+                int neighborNum = houseGrid[adjacentPos[0]][adjacentPos[1]];
                 if (neighborNum != 0) {
-                    Room neighbor = allRooms.get(neighborNum - 1);
+                    Room neighbor = getRoom(neighborNum);
                     int neighborDoorIndex = direction.opposite().getIndex();
                     if (neighbor.doesDoorExist(neighborDoorIndex) && !newRoom.doesDoorExist(direction.getIndex())) {
                         neighbor.setBlockedDoor(neighborDoorIndex, true);
@@ -330,9 +334,9 @@ public class DungeonManager {
                 sb.append("Open");
                 int[] neighborRoomPos = peek(dir, currentPosition[0], currentPosition[1]);
                 if (isInBounds(neighborRoomPos[0], neighborRoomPos[1])) {
-                    int neighborRoomNum = roomGrid[neighborRoomPos[0]][neighborRoomPos[1]];
+                    int neighborRoomNum = houseGrid[neighborRoomPos[0]][neighborRoomPos[1]];
                     if (neighborRoomNum != 0) {
-                        Room neighborRoom = allRooms.get(neighborRoomNum - 1);
+                        Room neighborRoom = getRoom(neighborRoomNum);
                         sb.append(" - " + neighborRoomNum + "(" + neighborRoom.getName() + ")");
                     }                    
                 }
@@ -354,16 +358,23 @@ public class DungeonManager {
         if (roomNumber < 1 || roomNumber > allRooms.size()) {
             return -1;
         }
-        for (int r = 0; r < roomGrid.length; r++) {
-            for (int c = 0; c < roomGrid[0].length; c++) {
-                if (roomGrid[r][c] == roomNumber) {
+        int[] position = roomPosition(roomNumber);
+        if(position != null){
+            currentPosition[0] = position[0];
+            currentPosition[1] = position[1];
+            currentRoom = getRoom(roomNumber);
+            return 1;
+        }
+        /* for (int r = 0; r < houseGrid.length; r++) {
+            for (int c = 0; c < houseGrid[0].length; c++) {
+                if (houseGrid[r][c] == roomNumber) {
                     currentPosition[0] = r;
                     currentPosition[1] = c;
-                    currentRoom = allRooms.get(roomNumber - 1);
+                    currentRoom = getRoom(roomNumber);
                     return 1;
                 }
             }
-        }
+        } */
         return 0;
     }
 
@@ -377,11 +388,11 @@ public class DungeonManager {
 
     public int goToRoomByCoordinates(int row, int col) {
         if (isInBounds(row, col)) {
-            int roomNumber = roomGrid[row][col];
+            int roomNumber = houseGrid[row][col];
             if (roomNumber != 0) {
                 currentPosition[0] = row;
                 currentPosition[1] = col;
-                currentRoom = allRooms.get(roomNumber - 1);
+                currentRoom = getRoom(roomNumber);
                 return 1;
             } else {
                 return 0;
@@ -389,6 +400,56 @@ public class DungeonManager {
         } else {
             return -1;
         }
+    }
+
+    public int placeRoom(int roomNbr, int targetRow, int targetCol) {
+        if (!isInBounds(targetRow, targetCol)) {
+            return -2;
+        }
+        int currentRoomAtTarget = houseGrid[targetRow][targetCol];
+        if (currentRoomAtTarget != 0){
+            return -1;
+        }
+
+        int[] roomsCurrentPlace = roomPosition(roomNbr);
+        
+        if (roomsCurrentPlace != null){
+            return 0;
+        }
+
+        Direction direction = Direction.West;
+        for (int i = 3; i > 0; i--) {
+            direction = Direction.values()[i];
+            int[] newPos = peek(direction, targetRow, targetCol);
+            if(isInBounds(newPos[0], newPos[1])){
+                break;
+            }
+        }
+        Room room = getRoom(roomNbr);
+        houseGrid[targetRow][targetCol] = room.getRoomNumber();
+        setDoorsInNewRoom(room, direction, targetRow, targetCol);
+        return 1;        
+    }
+
+    public boolean removeRoomFromHouse(int roomNumber){
+        int[] position = roomPosition(roomNumber);
+        if (position != null){
+            houseGrid[position[0]][position[1]] = 0;
+            return true;
+        }
+        return false;
+    }
+
+    private int[] roomPosition(int roomNumber) { 
+        for (int row = 0; row < houseGrid.length; row++) {
+            for (int col = 0; col < houseGrid[0].length; col++) {
+                if (houseGrid[row][col] == roomNumber) {
+                    int[] result = new int[]{row, col};
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 
 
@@ -400,10 +461,10 @@ public class DungeonManager {
         allRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
         unusedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv");
         DungeonLoader.GridData data = DungeonLoader.readGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv");
-        DungeonLoader.loadRoomState(SAVE_DIRECTORY + "roomstate" + slot + ".csv", allRooms);
-        roomGrid = data.grid;
+        DungeonLoader.loadRoomState(SAVE_DIRECTORY + "roomState" + slot + ".csv", allRooms);
+        houseGrid = data.grid;
         currentPosition = data.position;
-        currentRoom = allRooms.get(roomGrid[currentPosition[0]][currentPosition[1]]-1);
+        currentRoom = getRoom(houseGrid[currentPosition[0]][currentPosition[1]]);
     }
 
     public void newDungeon() throws IOException {
@@ -414,7 +475,7 @@ public class DungeonManager {
     public void saveDungeon(String slot) throws IOException {
         DungeonSaver.saveRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv", allRooms);
         DungeonSaver.saveRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv", unusedRooms);
-        DungeonSaver.saveGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv", roomGrid, currentPosition);
+        DungeonSaver.saveGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv", houseGrid, currentPosition);
         DungeonSaver.saveRoomState(SAVE_DIRECTORY + "roomState" + slot + ".csv", allRooms);
     }
 

@@ -64,19 +64,18 @@ public class Dungeon {
     private static void mainMenu(DungeonManager manager, Scanner in) {
         while(true){
             Room currentRoom = manager.getCurrentRoom();
-            System.out.println("=== Main Menu ===");
+            System.out.println("\n=== Main Menu ===");
             System.out.println("Current Room: " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ")");
             System.out.println("Current Position: (" + manager.getCurrentPosition()[0] + ", " + manager.getCurrentPosition()[1] + ")");
             System.out.println(manager.describeDoors(currentRoom));
             System.out.println("1. Move to a new room");
-            System.out.println("2. View room grid");
+            System.out.println("2. View house grid");
             System.out.println("3. Print room details");
             System.out.println("4. Unlock door");
-            System.out.println("5. Go to room by number");
-            System.out.println("6. Go to room by coordinates");
-            System.out.println("7. Save and Exit");
+            System.out.println("5. Manage rooms");
+            System.out.println("6. Save and Exit");
             System.out.println("0. Exit without Saving");
-            System.out.print("Enter your choice: ");
+            System.out.print("\nEnter your choice: ");
 
             String choice = in.nextLine();
 
@@ -85,7 +84,7 @@ public class Dungeon {
                     manager.presentRoomOptions();
                     break;
                 case "2":
-                    printGrid(manager.getRoomGrid());
+                    printGrid(manager.getHouseGrid());
                     break;
                 case "3":
                     printWithSeparator(manager.getCurrentRoom().toString());
@@ -94,32 +93,9 @@ public class Dungeon {
                     manager.unlockDoor();
                     break;
                 case "5":
-                    System.out.print("Enter room number: ");
-                    int roomNumber = Integer.parseInt(in.nextLine());
-                    int result = manager.goToRoomByNumber(roomNumber);
-                    if(result == -1){
-                        printWithSeparator("Invalid room number: " + roomNumber);
-                    } else if(result == 1){
-                        printWithSeparator("Moved to room number: " + roomNumber);
-                    } else {
-                        printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
-                    }
+                    manageRoomsMenu(manager, in);
                     break;
                 case "6":
-                    System.out.print("Enter row: ");
-                    int row = Integer.parseInt(in.nextLine());
-                    System.out.print("Enter column: ");
-                    int col = Integer.parseInt(in.nextLine());
-                    int moveResult = manager.goToRoomByCoordinates(row, col);
-                    if(moveResult == 1){
-                        printWithSeparator("Moved to room at (" + row + ", " + col + ").");
-                    } else if(moveResult == 0){
-                        printWithSeparator("No room exists at (" + row + ", " + col + ").");
-                    } else {
-                        printWithSeparator("Invalid coordinates: (" + row + ", " + col + ").");
-                    }
-                    break;
-                case "7":
                     printWithSeparator("Which slot do you want to save on (1 to 5): ");
                     String slot = in.nextLine();
                     if(!checkSlot(slot)){
@@ -149,6 +125,99 @@ public class Dungeon {
                     break;
                 default:
                     printWithSeparator("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    private static void manageRoomsMenu(DungeonManager manager, Scanner in) {
+        while (true){
+            System.out.println("\n=== Manage Rooms ===");
+            System.out.println("1. Go to room by number");
+            System.out.println("2. Go to room by coordinates");
+            System.out.println("3. Set room at coordinates");
+            System.out.println("4. Remove placed room");
+            System.out.println("5. Back");
+            System.out.print("\nEnter your choice: ");
+
+            String choice = in.nextLine();
+
+            switch (choice) {
+                case "1":
+
+                    System.out.print("Enter room number: ");
+                    int roomNumber = Integer.parseInt(in.nextLine());
+                    int result = manager.goToRoomByNumber(roomNumber);
+                    if(result == -1){
+                        printWithSeparator("Invalid room number: " + roomNumber);
+                    } else if(result == 1){
+                        printWithSeparator("Moved to room number: " + roomNumber);
+                    } else {
+                        printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
+                    }
+                    break;
+                case "2":
+
+                    System.out.print("Enter row: ");
+                    int row = Integer.parseInt(in.nextLine());
+                    System.out.print("Enter column: ");
+                    int col = Integer.parseInt(in.nextLine());
+                    int moveResult = manager.goToRoomByCoordinates(row, col);
+                    if(moveResult == 1){
+                        printWithSeparator("Moved to room at (" + row + ", " + col + ").");
+                    } else if(moveResult == 0){
+                        printWithSeparator("No room exists at (" + row + ", " + col + ").");
+                    } else {
+                        printWithSeparator("Invalid coordinates: (" + row + ", " + col + ").");
+                    }
+                    break;
+                case "3":
+
+                    System.out.print("Enter room number to place: ");
+                    int roomNbr = Integer.valueOf(in.nextLine());
+                    System.out.print("Enter target row: ");
+                    int targetRow = Integer.valueOf(in.nextLine());
+                    System.out.print("Enter target column: ");
+                    int targetCol = Integer.valueOf(in.nextLine());
+                    int placeResult = manager.placeRoom(roomNbr, targetRow, targetCol);
+                    if(placeResult == 1){
+                        printWithSeparator("Room " + roomNbr + " (" + manager.getRoom(roomNbr).getName() + ") has been placed at (" + targetRow + "," + targetCol + ")");
+                    }
+                    else if (placeResult == 0){
+                        printWithSeparator("Error: " + roomNbr + " (" + manager.getRoom(roomNbr).getName() + ") is already placed in the house");
+                    }
+                    else if (placeResult == -1) {
+                        printWithSeparator("Error: room already exists at (" + targetRow + "," + targetCol + ")");
+                    } 
+                    else if (placeResult == -2){
+                        printWithSeparator("Error: coordinates (" + targetRow + "," + targetCol + ") are outside of house bounds");
+                    }
+                    else {
+                        printWithSeparator("Error: Unknown error");
+                    }
+                    break;
+                case "4":
+                    
+                    System.out.print("Enter room number to remove: ");
+                    int roomNumbr = Integer.valueOf(in.nextLine());
+                    printWithSeparator("You want to remove room " + roomNumbr + " (" + manager.getRoom(roomNumbr).getName() + "). Are you sure? Yes to confirm");
+                    String confirm = in.nextLine().trim();
+                    if(!confirm.equalsIgnoreCase("yes")){
+                        printWithSeparator("Canceled");
+                        break;
+                    }
+                    System.out.println("Removing room " + roomNumbr + " (" + manager.getRoom(roomNumbr).getName() + ")....");
+                    boolean removeResult = manager.removeRoomFromHouse(roomNumbr);
+                    if(removeResult){
+                        printWithSeparator("Room "+ roomNumbr + " (" + manager.getRoom(roomNumbr).getName() + ") has been removed from the house");;
+                    } else {
+                        printWithSeparator("Error: Room is not placed in the house");
+                    }
+                    break;
+                case "5":
+                    return;
+                default:
+                    printWithSeparator("Invalid choice. Please try again.");
+                    break;
             }
         }
     }
