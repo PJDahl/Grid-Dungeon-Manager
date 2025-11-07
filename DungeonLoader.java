@@ -149,12 +149,7 @@ public class DungeonLoader {
     /*
      * Methods to read doors from a csv file
      */
-    public static void loadRoomState(String filename, ArrayList<Room> allRooms) throws IOException {
-        Map<Integer, Room> byId = new HashMap<>();
-        for (Room room : allRooms){
-            byId.put(room.getRoomNumber(), room);
-        }
-            
+    public static void loadRoomState(String filename, HashMap<Integer, Room> allRooms) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
             br.readLine(); // skip header
 
@@ -165,7 +160,7 @@ public class DungeonLoader {
                 if (roomArray.length < 4) continue;
 
                 int roomNum = Integer.parseInt(roomArray[0].trim());
-                Room room = byId.get(roomNum);
+                Room room = allRooms.get(roomNum);
                 if (room != null) {
                     boolean[] doors   = bitsToBools(roomArray[1].trim());
                     boolean[] blocked = bitsToBools(roomArray[2].trim());

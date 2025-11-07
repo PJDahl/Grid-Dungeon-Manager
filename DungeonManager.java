@@ -1,13 +1,14 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
 public class DungeonManager {
     private int[][] houseGrid;
     private ArrayList<Room> unusedRooms;
-    private ArrayList<Room> allRooms;
+    private HashMap<Integer, Room> allRooms;
     private int[] currentPosition;
     private Room currentRoom;
     private Room startingRoom;
@@ -24,11 +25,16 @@ public class DungeonManager {
     }
 
     public void initializeNewRooms() throws IOException {
-        allRooms = DungeonLoader.readRooms("rooms.csv");
-        unusedRooms = new ArrayList<>(allRooms);
-        Room goal = unusedRooms.remove(0); // Remove the goal room from unused rooms
+        ArrayList<Room> loadedRooms = DungeonLoader.readRooms("rooms.csv");
+        for (Room room : loadedRooms) {
+            allRooms.put(room.getRoomNumber(), room);
+        }
+        unusedRooms = new ArrayList<>(loadedRooms);
+        Room goal = allRooms.get(1);
+        unusedRooms.remove(goal); // Remove the goal room from unused rooms
         goal.setDoorExists(Direction.North.getIndex(), true); // Ensure goal room has a door to the north
-        startingRoom = unusedRooms.remove(0); // Remove the starting room from unused rooms and set as current room
+        startingRoom = allRooms.get(2);
+        unusedRooms.remove(startingRoom); // Remove the starting room from unused rooms and set as current room
         startingRoom.setDoorExists(Direction.North.getIndex(), true);
         startingRoom.setDoorExists(Direction.East.getIndex(), true);
         startingRoom.setDoorExists(Direction.West.getIndex(), true);
@@ -170,7 +176,7 @@ public class DungeonManager {
     }
 
     public Room getRoom(int roomNumber){
-        return allRooms.get(roomNumber-1);
+        return allRooms.get(roomNumber);
     }
 
     public int[] getCurrentPosition() {
@@ -181,7 +187,7 @@ public class DungeonManager {
         return currentRoom;
     }
 
-    public ArrayList<Room> getAllRooms() {
+    public HashMap<Integer, Room> getAllRooms() {
         return allRooms;
     }
 
@@ -457,8 +463,11 @@ public class DungeonManager {
      * Dungeon loading and saving
      */
 
-    public void loadDungeon(String slot) throws IOException {
-        allRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
+    public void loadDungeon(String slot) throws IOException {        
+        ArrayList<Room> loadedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv");
+        for (Room room : loadedRooms) {
+            allRooms.put(room.getRoomNumber(), room);
+        }
         unusedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv");
         DungeonLoader.GridData data = DungeonLoader.readGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv");
         DungeonLoader.loadRoomState(SAVE_DIRECTORY + "roomState" + slot + ".csv", allRooms);
@@ -473,10 +482,10 @@ public class DungeonManager {
     }
 
     public void saveDungeon(String slot) throws IOException {
-        DungeonSaver.saveRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv", allRooms);
+        DungeonSaver.saveRooms(SAVE_DIRECTORY + "allRooms" + slot + ".csv", new ArrayList<>(allRooms.values()));
         DungeonSaver.saveRooms(SAVE_DIRECTORY + "unusedRooms" + slot + ".csv", unusedRooms);
         DungeonSaver.saveGrid(SAVE_DIRECTORY + "roomGrid" + slot + ".csv", houseGrid, currentPosition);
-        DungeonSaver.saveRoomState(SAVE_DIRECTORY + "roomState" + slot + ".csv", allRooms);
+        DungeonSaver.saveRoomState(SAVE_DIRECTORY + "roomState" + slot + ".csv", new ArrayList<>(allRooms.values()));
     }
 
     public boolean emptySlot(String slot) {
