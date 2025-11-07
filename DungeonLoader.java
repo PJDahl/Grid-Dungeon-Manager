@@ -1,10 +1,11 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class DungeonLoader {
 
@@ -12,11 +13,12 @@ public class DungeonLoader {
      * Methods to read rooms from a CSV file
      */
     
-    public static ArrayList<Room> readRooms(String filename) throws IOException{
+    public static ArrayList<Room> readRooms(String directory, String filename) throws IOException{
+        Path path = Paths.get(directory, filename);
 
         ArrayList<Room> rooms = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path.toString()))) {
             br.readLine(); // Skip header line
 
             String line;
@@ -96,11 +98,12 @@ public class DungeonLoader {
      * Methods to read room grid from a CSV file
      */
 
-    public static GridData readGrid(String filename) throws IOException {
+    public static GridData readGrid(String directory, String filename) throws IOException {
+        Path path = Paths.get(directory, filename);
         ArrayList<int[]> rows = new ArrayList<>();
         int[] position = new int[2];
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path.toString()))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.isBlank()) continue;
@@ -149,8 +152,9 @@ public class DungeonLoader {
     /*
      * Methods to read doors from a csv file
      */
-    public static void loadRoomState(String filename, HashMap<Integer, Room> allRooms) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+    public static void loadRoomState(String directory, String filename, HashMap<Integer, Room> allRooms) throws IOException {
+        Path path = Paths.get(directory, filename);
+        try (BufferedReader br = new BufferedReader(new FileReader(path.toString()))) {
             br.readLine(); // skip header
 
             String line;

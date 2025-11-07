@@ -1,4 +1,5 @@
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,8 +15,9 @@ public class DungeonSaver {
         "Danger", "Contents", "Special Effect", "Miniature"
     );
 
-    public static void saveRooms(String filename, ArrayList<Room> rooms) throws IOException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
+    public static void saveRooms(String directory, String filename, ArrayList<Room> rooms) throws IOException {
+        Path path = Paths.get(directory, filename);
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path.toString()))) {
             bw.write(joinRowWithComma(header));
             bw.newLine();
 
@@ -25,6 +27,13 @@ public class DungeonSaver {
                 bw.newLine();
             }
             bw.flush();
+        }
+    }
+
+    public static void ensureSaveDir(String directory) {
+        File dir = new File(directory);
+        if (!dir.exists()) {
+            dir.mkdirs();
         }
     }
 
@@ -79,8 +88,9 @@ public class DungeonSaver {
         return s == null ? "-" : s;
     }
 
-    public static void saveGrid(String filename, int[][] roomGrid, int[] position) throws IOException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
+    public static void saveGrid(String directory, String filename, int[][] roomGrid, int[] position) throws IOException {
+        Path path = Paths.get(directory, filename);
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path.toString()))) {
             for (int[] row : roomGrid) {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < row.length; i++) {
@@ -97,8 +107,9 @@ public class DungeonSaver {
         }
     }
 
-    public static void saveRoomState(String filename, ArrayList<Room> rooms) throws IOException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
+    public static void saveRoomState(String directory, String filename, ArrayList<Room> rooms) throws IOException {
+        Path path = Paths.get(directory, filename);
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path.toString()))) {
             bw.write("Room,Doors,Blocked,Locked");
             bw.newLine();
 
@@ -133,7 +144,7 @@ public class DungeonSaver {
 
 
     public static boolean deleteSaves(String directory, String slot) throws IOException {
-        Path dir = directory == null ? Paths.get("") : Paths.get(directory);
+        Path dir = Paths.get(directory);
         Path pathAll   = dir.resolve("allRooms" + slot + ".csv");
         Path pathUnused= dir.resolve("unusedRooms" + slot + ".csv");
         Path pathGrid  = dir.resolve("roomGrid" + slot + ".csv");
