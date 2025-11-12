@@ -269,15 +269,15 @@ public class DungeonManager {
         int doorsToSet = newRoom.getDoorCount() - 1; // One door is already set
         List<Direction> blockedCandidates = new ArrayList<>();
 
-        if (BLOCKED_DOOR_CHANCE <= 20) {
+        if (BLOCKED_DOOR_CHANCE <= 20 && doorsToSet > 0) {
             for (Direction direction : options) {
-                if (doorsToSet <= 0) break;
 
                 int[] adjacentPos = peek(direction, row, col);
                 int neighborRoomNum = houseGrid[adjacentPos[0]][adjacentPos[1]];
                 if (neighborRoomNum == 1 && getRoom(neighborRoomNum).doesDoorExist(direction.opposite().getIndex())) {
                     newRoom.setDoorExists(direction.getIndex(), true);
                     doorsToSet--;
+                    break;
                 }
                     
             }
