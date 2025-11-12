@@ -53,6 +53,9 @@ public class Dungeon {
                 case "3":
                     handleDeleteSave(manager, in);               
                     break;
+                case "4":
+                    manager.getRoom(-34).getName();
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
                     validChoice = false;
@@ -136,7 +139,8 @@ public class Dungeon {
             System.out.println("2. Go to room by coordinates");
             System.out.println("3. Set room at coordinates");
             System.out.println("4. Remove placed room");
-            System.out.println("5. Back");
+            System.out.println("5. Clear dungeon");
+            System.out.println("6. Back");
             System.out.print("\nEnter your choice: ");
 
             String choice = in.nextLine();
@@ -174,16 +178,23 @@ public class Dungeon {
 
                     System.out.print("Enter room number to place: ");
                     int roomNbr = Integer.valueOf(in.nextLine());
+                    Room roomToPlace;
+                    try {
+                        roomToPlace = manager.getRoom(roomNbr);
+                    } catch (NullPointerException e){
+                        printWithSeparator("No such room");
+                        break;
+                    }
                     System.out.print("Enter target row: ");
                     int targetRow = Integer.valueOf(in.nextLine());
                     System.out.print("Enter target column: ");
                     int targetCol = Integer.valueOf(in.nextLine());
                     int placeResult = manager.placeRoom(roomNbr, targetRow, targetCol);
                     if(placeResult == 1){
-                        printWithSeparator("Room " + roomNbr + " (" + manager.getRoom(roomNbr).getName() + ") has been placed at (" + targetRow + "," + targetCol + ")");
+                        printWithSeparator("Room " + roomNbr + " (" + roomToPlace.getName() + ") has been placed at (" + targetRow + "," + targetCol + ")");
                     }
                     else if (placeResult == 0){
-                        printWithSeparator("Error: " + roomNbr + " (" + manager.getRoom(roomNbr).getName() + ") is already placed in the house");
+                        printWithSeparator("Error: " + roomNbr + " (" + roomToPlace.getName() + ") is already placed in the house");
                     }
                     else if (placeResult == -1) {
                         printWithSeparator("Error: room already exists at (" + targetRow + "," + targetCol + ")");
@@ -199,21 +210,58 @@ public class Dungeon {
                     
                     System.out.print("Enter room number to remove: ");
                     int roomNumbr = Integer.valueOf(in.nextLine());
-                    printWithSeparator("You want to remove room " + roomNumbr + " (" + manager.getRoom(roomNumbr).getName() + "). Are you sure? Yes to confirm");
+                    Room room;
+                    try {
+                        room = manager.getRoom(roomNumbr);
+                    } catch (NullPointerException e){
+                        printWithSeparator("No such room");
+                        break;
+                    }
+                    printWithSeparator("You want to remove room " + roomNumbr + " (" + room.getName() + "). Are you sure? Yes to confirm");
                     String confirm = in.nextLine().trim();
                     if(!confirm.equalsIgnoreCase("yes")){
                         printWithSeparator("Canceled");
                         break;
                     }
-                    System.out.println("Removing room " + roomNumbr + " (" + manager.getRoom(roomNumbr).getName() + ")....");
+                    System.out.println("Removing room " + roomNumbr + " (" + room.getName() + ")....");
                     boolean removeResult = manager.removeRoomFromHouse(roomNumbr);
                     if(removeResult){
-                        printWithSeparator("Room "+ roomNumbr + " (" + manager.getRoom(roomNumbr).getName() + ") has been removed from the house");;
+                        printWithSeparator("Room "+ roomNumbr + " (" + room.getName() + ") has been removed from the house");;
                     } else {
                         printWithSeparator("Error: Room is not placed in the house");
                     }
                     break;
-                case "5":
+                case "6":
+                    printWithSeparator("Are you sure you want to clear the entire dungeon? Yes to confirm");
+                    String confirmClearAll = in.nextLine().trim();
+                    if(!confirmClearAll.equalsIgnoreCase("yes")){
+                        printWithSeparator("Canceled");
+                        break;
+                    }
+                    manager.clearDungeon();
+                    break;
+                case "7":
+                    System.out.print("Which room do you not want to remove?");
+                    int roomToSave = Integer.parseInt(in.nextLine());
+                    try {
+                        printWithSeparator("Are you sure you want to clear the dungeon, except for room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +")? Yes to confirm");
+                    } catch (NullPointerException e){
+                        printWithSeparator("No such room");
+                        break;
+                    }
+                    String confirmClear = in.nextLine().trim();
+                    if(!confirmClear.equalsIgnoreCase("yes")){
+                        printWithSeparator("Canceled");
+                        break;
+                    }
+                    int clearResult = manager.clearDungeonButOneRoom(roomToSave);
+                    if (clearResult == 1){
+                        printWithSeparator("Dungeon cleard, except for room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +")");
+                    } else{
+                        printWithSeparator("Error: Room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +") is not placed.");
+                    }
+                    break;
+                case "8":
                     return;
                 default:
                     printWithSeparator("Invalid choice. Please try again.");

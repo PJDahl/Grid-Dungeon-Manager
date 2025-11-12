@@ -102,6 +102,7 @@ public class DungeonLoader {
         Path path = Paths.get(directory, filename);
         ArrayList<int[]> rows = new ArrayList<>();
         int[] position = new int[2];
+        int start = 2;
 
         try (BufferedReader br = new BufferedReader(new FileReader(path.toString()))) {
             String line;
@@ -112,7 +113,15 @@ public class DungeonLoader {
                     if (posLine != null) {
                         position = parsePositionLine(posLine);
                     }
+                    line = br.readLine();
+                    if (line.startsWith("#STARTING_ROOM")) {
+                        String startLine = br.readLine();
+                        if (startLine != null) {
+                            start = Integer.parseInt(startLine);
+                        }
+                    }
                     break;
+                    
                 }
                 String[] tokens = line.split(",");
                 int[] row = new int[tokens.length];
@@ -128,7 +137,7 @@ public class DungeonLoader {
             grid[i] = rows.get(i);
         }
 
-        return new GridData(grid, position);
+        return new GridData(grid, position, start);
     }
 
     private static int[] parsePositionLine(String line) {
@@ -142,10 +151,12 @@ public class DungeonLoader {
     public static class GridData {
         public final int[][] grid;
         public final int[] position;
+        public final int startingRoom;
 
-        public GridData(int[][] grid, int[] position) {
+        public GridData(int[][] grid, int[] position, int startingRoom) {
             this.grid = grid;
             this.position = position;
+            this.startingRoom = startingRoom;
         }
     }
 

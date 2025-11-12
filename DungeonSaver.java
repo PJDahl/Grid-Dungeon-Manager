@@ -88,7 +88,7 @@ public class DungeonSaver {
         return s == null ? "-" : s;
     }
 
-    public static void saveGrid(String directory, String filename, int[][] roomGrid, int[] position) throws IOException {
+    public static void saveGrid(String directory, String filename, int[][] roomGrid, int[] position, int startingRoom) throws IOException {
         Path path = Paths.get(directory, filename);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(path.toString()))) {
             for (int[] row : roomGrid) {
@@ -103,6 +103,10 @@ public class DungeonSaver {
             bw.write("#PLAYER_POSITION");
             bw.newLine();
             bw.write(position[0] + "," + position[1]);
+            bw.newLine();
+            bw.write("#STARTING_ROOM");
+            bw.newLine();
+            bw.write(startingRoom);
             bw.flush();
         }
     }
