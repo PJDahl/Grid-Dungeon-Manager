@@ -14,7 +14,7 @@ public class DungeonManager {
     private Room currentRoom;
     private Room startingRoom;
     private final Scanner in;
-    private final int BLOCKED_DOOR_CHANCE = 33; // Percentage chance to block a door between rooms
+    private int BLOCKED_DOOR_CHANCE = 50; // Percentage chance to block a door between rooms
     private final String SAVE_DIRECTORY = "saves/";
 
      /*
@@ -23,6 +23,18 @@ public class DungeonManager {
 
     public DungeonManager(Scanner in) {
         this.in = in;
+    }
+
+    public void increaseBlockedDoorChance() {
+        this.BLOCKED_DOOR_CHANCE -= 10;
+    }
+
+    public void decreaseBlockedDoorChance() {
+        this.BLOCKED_DOOR_CHANCE -= 10;
+    }
+
+    public int getBlockedDoorChance() {
+        return BLOCKED_DOOR_CHANCE;
     }
 
     public void initializeNewRooms() throws IOException {
@@ -106,6 +118,10 @@ public class DungeonManager {
     public void presentRoomOptions() {
         System.out.print("Enter direction to move (N/S/E/W): ");
         Direction direction = getDirectionFromUser();
+        if (direction == null) {
+            System.out.println("Movement cancelled.");
+            return;
+        }
         int[] newPosition = peek(direction, currentPosition[0], currentPosition[1]);
 
         if (!isInBounds(newPosition[0], newPosition[1])) {
@@ -160,14 +176,17 @@ public class DungeonManager {
 
     private Direction getDirectionFromUser() {
         char direction = ' ';
-        while (direction != 'N' && direction != 'S' && direction != 'E' && direction != 'W') {
+        while (direction != 'N' && direction != 'S' && direction != 'E' && direction != 'W' && direction != 'C') {
             String input = in.nextLine().toUpperCase();
             if (input.length() == 1) {
                 direction = input.charAt(0);
             }
             if (direction != 'N' && direction != 'S' && direction != 'E' && direction != 'W') {
-                System.out.println("Invalid input. Please enter N, S, E, or W:");
+                System.out.println("Invalid input. Please enter N, S, E, or W, to cancel enter C:");
             }
+        }
+        if(direction == 'C'){
+            return null;
         }
         return Direction.fromChar(direction);
     }
