@@ -14,7 +14,7 @@ public class DungeonManager {
     private Room currentRoom;
     private Room startingRoom;
     private final Scanner in;
-    private int BLOCKED_DOOR_CHANCE = 50; // Percentage chance to block a door between rooms
+    private int BLOCKED_DOOR_CHANCE = 40; // Percentage chance to block a door between rooms
     private final String SAVE_DIRECTORY = "saves/";
 
      /*
