@@ -490,7 +490,17 @@ public class DungeonManager {
         }
     }
 
-    public int placeRoom(int roomNbr, int targetRow, int targetCol) {
+    /*
+     * Room placement
+     * returns:
+     * 1 if successful
+     * 0 if room already placed
+     * -1 if target occupied
+     * -2 if out of bounds
+     * -3 if door would lead out of bounds
+     */
+
+    public int placeRoom(int roomNbr, int targetRow, int targetCol, Direction direction){
         if (!isInBounds(targetRow, targetCol)) {
             return -2;
         }
@@ -504,18 +514,27 @@ public class DungeonManager {
         if (roomsCurrentPlace != null){
             return 0;
         }
-
-        Direction direction = Direction.West;
-        for (int i = 3; i > 0; i--) {
-            direction = Direction.values()[i];
+        
+        if (direction != null){
             int[] newPos = peek(direction, targetRow, targetCol);
-            if(isInBounds(newPos[0], newPos[1])){
-                break;
+            if(!isInBounds(newPos[0], newPos[1])){
+                return -3;
             }
+        }
+
+        if (direction == null){
+            direction = Direction.West;
+            for (int i = 3; i > 0; i--) {
+                direction = Direction.values()[i];
+                int[] newPos = peek(direction, targetRow, targetCol);
+                if(isInBounds(newPos[0], newPos[1])){
+                    break;
+                }
+            } 
         }
         Room room = getRoom(roomNbr);
         houseGrid[targetRow][targetCol] = room.getRoomNumber();
-        setDoorsInNewRoom(room, direction, targetRow, targetCol);
+        setDoorsInNewRoom(room, direction.opposite(), targetRow, targetCol);
         return 1;        
     }
 

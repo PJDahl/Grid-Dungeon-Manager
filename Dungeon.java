@@ -200,7 +200,18 @@ public class Dungeon {
                     int targetRow = Integer.valueOf(in.nextLine());
                     System.out.print("Enter target column: ");
                     int targetCol = Integer.valueOf(in.nextLine());
-                    int placeResult = manager.placeRoom(roomNbr, targetRow, targetCol);
+                    System.out.print("Enter direction for door (N/S/E/W) or leave blank for random: ");
+                    String direction = in.nextLine().trim();
+                    Direction dir = null;
+                    if(!direction.isEmpty()){
+                        try {
+                            dir = Direction.fromChar(direction.charAt(0));
+                        } catch (IllegalArgumentException e){
+                            printWithSeparator("Invalid direction: " + direction);
+                            break;
+                        }
+                    }
+                    int placeResult = manager.placeRoom(roomNbr, targetRow, targetCol, dir);
                     if(placeResult == 1){
                         printWithSeparator("Room " + roomNbr + " (" + roomToPlace.getName() + ") has been placed at (" + targetRow + "," + targetCol + ")");
                     }
@@ -212,6 +223,9 @@ public class Dungeon {
                     } 
                     else if (placeResult == -2){
                         printWithSeparator("Error: coordinates (" + targetRow + "," + targetCol + ") are outside of house bounds");
+                    }
+                    else if (placeResult == -3){
+                        printWithSeparator("Error: door would lead out of bounds");
                     }
                     else {
                         printWithSeparator("Error: Unknown error");
