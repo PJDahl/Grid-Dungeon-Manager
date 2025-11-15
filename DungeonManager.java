@@ -269,6 +269,23 @@ public class DungeonManager {
         return allRooms;
     }
 
+    public ArrayList<String> getAllMiniaturesInHouse() {
+        ArrayList<String> miniatures = new ArrayList<>();
+        for (int row = 0; row < houseGrid.length; row++) {
+            for (int col = 0; col < houseGrid[0].length; col++) {
+                int roomNumber = houseGrid[row][col];
+                if (roomNumber != 0) {
+                    Room room = getRoom(roomNumber);
+                    String miniature = room.getMiniature();
+                    if (miniature != null && !miniature.equals("-") && !miniatures.contains(miniature) && !miniature.equalsIgnoreCase("ingen")) {
+                        miniatures.add(miniature);
+                    }
+                }
+            }
+        }
+        return miniatures;
+    }
+
     /*
      * Directional logic
      */

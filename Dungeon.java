@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Dungeon {
@@ -78,7 +79,8 @@ public class Dungeon {
             System.out.println("5. Manage rooms");
             System.out.println("6. Increase chance of blocked door");
             System.out.println("7. Decrease chance of blocked door");
-            System.out.println("8. Save and Exit");
+            System.out.println("8. Show all miniatures in the house");
+            System.out.println("9. Save and Exit");
             System.out.println("0. Exit without Saving");
             System.out.print("\nEnter your choice: ");
 
@@ -109,6 +111,18 @@ public class Dungeon {
                     printWithSeparator("Chance of blocked door decreased to " + manager.getBlockedDoorChance() + "%");
                     break;
                 case "8":
+                    ArrayList<String> miniatures = manager.getAllMiniaturesInHouse();
+                    if(miniatures.isEmpty()){
+                        printWithSeparator("No miniatures placed in the house.");
+                    } else {
+                        StringBuilder sb = new StringBuilder("Miniatures in the house:\n");
+                        for(String mini : miniatures){
+                            sb.append("- ").append(mini).append("\n");
+                        }
+                        printWithSeparator(sb.toString());
+                    }
+                    break;
+                case "9":
                     printWithSeparator("Which slot do you want to save on (1 to 5): ");
                     String slot = in.nextLine();
                     if(!checkSlot(slot)){
@@ -146,12 +160,11 @@ public class Dungeon {
         while (true){
             System.out.println("\n=== Manage Rooms ===");
             System.out.println("1. Go to room by number");
-            System.out.println("2. Go to room by coordinates");
-            System.out.println("3. Set room at coordinates");
-            System.out.println("4. Remove placed room");
-            System.out.println("5. Clear dungeon");
-            System.out.println("6. Clear dungeon except for specific room");
-            System.out.println("7. Back");
+            System.out.println("2. Set room at coordinates");
+            System.out.println("3. Remove placed room");
+            System.out.println("4. Clear dungeon");
+            System.out.println("5. Clear dungeon except for specific room");
+            System.out.println("6. Back");
             System.out.print("\nEnter your choice: ");
 
             String choice = in.nextLine();
@@ -171,21 +184,6 @@ public class Dungeon {
                     }
                     break;
                 case "2":
-
-                    System.out.print("Enter row: ");
-                    int row = Integer.parseInt(in.nextLine());
-                    System.out.print("Enter column: ");
-                    int col = Integer.parseInt(in.nextLine());
-                    int moveResult = manager.goToRoomByCoordinates(row, col);
-                    if(moveResult == 1){
-                        printWithSeparator("Moved to room at (" + row + ", " + col + ").");
-                    } else if(moveResult == 0){
-                        printWithSeparator("No room exists at (" + row + ", " + col + ").");
-                    } else {
-                        printWithSeparator("Invalid coordinates: (" + row + ", " + col + ").");
-                    }
-                    break;
-                case "3":
 
                     System.out.print("Enter room number to place: ");
                     int roomNbr = Integer.valueOf(in.nextLine());
@@ -231,7 +229,7 @@ public class Dungeon {
                         printWithSeparator("Error: Unknown error");
                     }
                     break;
-                case "4":
+                case "3":
                     
                     System.out.print("Enter room number to remove: ");
                     int roomNumbr = Integer.valueOf(in.nextLine());
@@ -256,7 +254,7 @@ public class Dungeon {
                         printWithSeparator("Error: Room is not placed in the house");
                     }
                     break;
-                case "5":
+                case "4":
                     printWithSeparator("Are you sure you want to clear the entire dungeon? Yes to confirm");
                     String confirmClearAll = in.nextLine().trim();
                     if(!confirmClearAll.equalsIgnoreCase("yes")){
@@ -266,7 +264,7 @@ public class Dungeon {
                     manager.clearDungeon();
                     printWithSeparator("Dungeon has been cleared. Current position set to starting position.");
                     break;
-                case "6":
+                case "5":
                     System.out.print("Which room do you not want to remove?");
                     int roomToSave = Integer.parseInt(in.nextLine());
                     try {
@@ -287,10 +285,12 @@ public class Dungeon {
                         printWithSeparator("Error: Room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +") is not placed.");
                     }
                     break;
-                case "7":
+                case "6":
                     return;  
-                case "8":
+                case "7":
                     return;     
+                case "8":
+                    return;
                 case "9":
                     return;
                 case "0":
