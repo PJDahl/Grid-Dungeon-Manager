@@ -145,18 +145,18 @@ public class Room {
 
     @Override
     public String toString() {
-        return "Room{" +
-                "roomNumber=" + roomNumber +
-                ", prerequisite='" + prerequisite + '\'' +
-                ", name='" + name + '\'' +
-                ", doorCount=" + doorCount +
-                ", locked=" + locked +
-                ", description='" + description + '\'' +
-                ", danger='" + danger + '\'' +
-                ", contents='" + contents + '\'' +
-                ", specialEffect='" + specialEffect + '\'' +
-                ", miniature='" + miniature + '\'' +
-                '}';
+        return "Room{\n" +
+                "roomNumber= " + roomNumber +
+                "\nprerequisite= " + prerequisite +
+                "\nname= " + name +
+                "\ndoorCount= " + doorCount +
+                "\nlocked= " + locked +
+                "\ndescription= " + description +
+                "\ndanger= " + danger +
+                "\ncontents= " + contents +
+                "\nspecialEffect= " + specialEffect +
+                "\nminiature= " + miniature +
+                "\n}";
     }
 
     @Override
