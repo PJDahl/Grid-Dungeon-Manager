@@ -164,7 +164,8 @@ public class Dungeon {
             System.out.println("3. Remove placed room");
             System.out.println("4. Clear dungeon");
             System.out.println("5. Clear dungeon except for specific room");
-            System.out.println("6. Back");
+            System.out.println("6. Update room details");
+            System.out.println("7. Back to main menu");
             System.out.print("\nEnter your choice: ");
 
             String choice = in.nextLine();
@@ -286,7 +287,20 @@ public class Dungeon {
                     }
                     break;
                 case "6":
-                    return;  
+                    System.out.print("Are you sure you want to update the details of every room in the dungeon? Yes to confirm");
+                    String confirmUpdate = in.nextLine().trim();
+                    if(!confirmUpdate.equalsIgnoreCase("yes")){
+                        printWithSeparator("Canceled");
+                        break;
+                    }
+                    try {
+                        manager.updateAllRoomDetails();
+                    } catch (IOException e) {
+                        printWithSeparator("An error occurred while updating room details: " + e.getMessage());
+                        break;
+                    }
+                    printWithSeparator("All room details have been updated.");
+                    break; 
                 case "7":
                     return;     
                 case "8":

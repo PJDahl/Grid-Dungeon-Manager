@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.Scanner;
 public class DungeonManager {
     private int[][] houseGrid;
     private ArrayList<Room> unusedRooms;
+    private ArrayList<Room> placedRooms;
     private HashMap<Integer, Room> allRooms = new HashMap<>();
     private int[] currentPosition;
     private int[] startPosition;
@@ -45,9 +47,12 @@ public class DungeonManager {
         unusedRooms = new ArrayList<>(loadedRooms);
         Room goal = allRooms.get(1);
         unusedRooms.remove(goal); // Remove the goal room from unused rooms
+        placedRooms = new ArrayList<>();
+        placedRooms.add(goal);
         goal.setDoorExists(Direction.North.getIndex(), true); // Ensure goal room has a door to the north
         startingRoom = allRooms.get(2);
         unusedRooms.remove(startingRoom); // Remove the starting room from unused rooms and set as current room
+        placedRooms.add(startingRoom);
         startingRoom.setDoorExists(Direction.North.getIndex(), true);
         startingRoom.setDoorExists(Direction.East.getIndex(), true);
         startingRoom.setDoorExists(Direction.West.getIndex(), true);
@@ -203,6 +208,7 @@ public class DungeonManager {
             return;
         }
         unusedRooms.remove(chosenRoom);
+        placedRooms.add(chosenRoom);
         houseGrid[newPosition[0]][newPosition[1]] = chosenRoom.getRoomNumber();
         setDoorsInNewRoom(chosenRoom, direction, newPosition[0], newPosition[1]);
         
@@ -551,6 +557,8 @@ public class DungeonManager {
         }
         Room room = getRoom(roomNbr);
         houseGrid[targetRow][targetCol] = room.getRoomNumber();
+        unusedRooms.remove(room);
+        placedRooms.add(room);
         setDoorsInNewRoom(room, direction.opposite(), targetRow, targetCol);
         return 1;        
     }
@@ -559,6 +567,9 @@ public class DungeonManager {
         int[] position = getRoomPosition(roomNumber);
         if (position != null){
             houseGrid[position[0]][position[1]] = 0;
+            Room room = getRoom(roomNumber);
+            placedRooms.remove(room);
+            unusedRooms.add(room);
             return true;
         }
         return false;
@@ -576,6 +587,17 @@ public class DungeonManager {
         return null;
     }
 
+    public void updateAllRoomDetails() throws IOException {
+        ArrayList<Room> updatedRooms = DungeonLoader.readRooms(".", "rooms.csv");
+        for (Room room : updatedRooms) {
+            allRooms.put(room.getRoomNumber(), room);
+        }
+        for (Room room : allRooms.values()) {
+            if (!placedRooms.contains(room) && !unusedRooms.contains(room)) {
+                unusedRooms.add(room);
+            }
+        }
+    }
 
     /*
      * Dungeon loading and saving
@@ -588,6 +610,11 @@ public class DungeonManager {
             allRooms.put(room.getRoomNumber(), room);
         }
         unusedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY, "unusedRooms" + slot + ".csv");
+        for (Room room : allRooms.values()) {
+            if (!unusedRooms.contains(room)) {
+                placedRooms.add(room);
+            }
+        }
         DungeonLoader.GridData data = DungeonLoader.readGrid(SAVE_DIRECTORY, "roomGrid" + slot + ".csv");
         DungeonLoader.loadRoomState(SAVE_DIRECTORY, "roomState" + slot + ".csv", allRooms);
         houseGrid = data.grid;
@@ -640,6 +667,9 @@ public class DungeonManager {
             }
         }
         unusedRooms.removeIf(room -> room.getRoomNumber() == startRoomNum || room.getRoomNumber() == goalRoomNum);
+        placedRooms.clear();
+        placedRooms.add(startingRoom);
+        placedRooms.add(getRoom(goalRoomNum));
 
         for (Room room : allRooms.values()) {
             if (room != null) {
@@ -690,6 +720,10 @@ public class DungeonManager {
         }
 
         unusedRooms.removeIf(room -> room.getRoomNumber() == startRoomNum || room.getRoomNumber() == goalRoomNum || room.getRoomNumber() == roomToSave);
+        placedRooms.clear();
+        placedRooms.add(startingRoom);
+        placedRooms.add(getRoom(goalRoomNum));
+        placedRooms.add(savedRoom);
 
         for (Room room : allRooms.values()) {
             if (room != null) {
