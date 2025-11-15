@@ -405,16 +405,6 @@ public class DungeonManager {
             currentRoom = getRoom(roomNumber);
             return 1;
         }
-        /* for (int r = 0; r < houseGrid.length; r++) {
-            for (int c = 0; c < houseGrid[0].length; c++) {
-                if (houseGrid[r][c] == roomNumber) {
-                    currentPosition[0] = r;
-                    currentPosition[1] = c;
-                    currentRoom = getRoom(roomNumber);
-                    return 1;
-                }
-            }
-        } */
         return 0;
     }
 
