@@ -102,13 +102,48 @@ public class DungeonManager {
     }
 
     private Room chooseRoom(ArrayList<Room> selectedRooms) {
-        System.out.print("Choose a room by entering its number: ");
+        System.out.print("Choose a room by entering its number, or 'C' to cancel. \nTo remove a room from the pool, enter 'R' followed by the room number: ");
         int choice = -1;
         while (choice < 1 || choice > selectedRooms.size()) {
             try {
-                choice = Integer.parseInt(in.nextLine());
+                String input = in.nextLine().toUpperCase();
+                if (input.startsWith("R")) {
+                    String roomNumStr = input.substring(1).trim();
+                    int roomNum = Integer.parseInt(roomNumStr);
+                    Room roomToRemove = null;
+                    for (Room room : selectedRooms) {
+                        if (room.getRoomNumber() == roomNum) {
+                            roomToRemove = room;
+                            break;
+                        }
+                    }
+                    if (roomToRemove == null) {
+                        System.out.println("Room " + roomNum + " is not in the current selection.");
+                        continue;
+                    }
+                    System.out.println("You want to remove room " + roomNum + "(" + roomToRemove.getName() + ") from the pool. Are you sure? Yes to confirm: ");
+                    String confirmation = in.nextLine().trim();
+                    if (!confirmation.equalsIgnoreCase("Yes")) {
+                        System.out.println("Removal cancelled.");
+                        continue;
+                    }
+                    int result = removeRoomFromPool(roomToRemove);
+                    if (result == 1) {
+                        selectedRooms.remove(roomToRemove);
+                        System.out.println("Room " + roomNum + " removed from the pool.");
+                    } else if (result == 0) {
+                        System.out.println("Room " + roomNum + " was not found in the pool.");
+                    } else {
+                        System.out.println("Invalid room number: " + roomNum);
+                    }
+                    continue;
+                }
+                if (input.equals("C")) {
+                    return null;
+                }
+                choice = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number between 1 and " + selectedRooms.size() + ": ");
+                System.out.println("Invalid input. Please enter a number between 1 and " + selectedRooms.size() + ", or 'C' to cancel: ");
             }
         }
         Room chosenRoom = selectedRooms.get(choice - 1);
@@ -163,6 +198,10 @@ public class DungeonManager {
         }
 
         Room chosenRoom = chooseRoom(roomOptions);
+        if (chosenRoom == null) {
+            System.out.println("Movement cancelled.");
+            return;
+        }
         unusedRooms.remove(chosenRoom);
         houseGrid[newPosition[0]][newPosition[1]] = chosenRoom.getRoomNumber();
         setDoorsInNewRoom(chosenRoom, direction, newPosition[0], newPosition[1]);
@@ -189,6 +228,25 @@ public class DungeonManager {
             return null;
         }
         return Direction.fromChar(direction);
+    }
+
+    /*
+     * Room pool management
+     * returns:
+     * 1 if successful
+     * 0 if room not in pool
+     * -1 if invalid room number
+     */
+    public int removeRoomFromPool(Room room){
+        if (room != null){
+            if (unusedRooms.remove(room)){
+                allRooms.remove(room.getRoomNumber());
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        return -1;
     }
 
     public int[][] getHouseGrid() {
