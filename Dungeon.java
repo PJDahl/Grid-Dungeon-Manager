@@ -77,7 +77,7 @@ public class Dungeon {
             System.out.println("4. Unlock door");
             System.out.println("5. Manage rooms");
             System.out.println("6. Increase chance of blocked door");
-            System.out.println("7. Increase chance of blocked door");
+            System.out.println("7. Decrease chance of blocked door");
             System.out.println("8. Save and Exit");
             System.out.println("0. Exit without Saving");
             System.out.print("\nEnter your choice: ");

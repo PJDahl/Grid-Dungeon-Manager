@@ -14,7 +14,7 @@ public class DungeonManager {
     private Room currentRoom;
     private Room startingRoom;
     private final Scanner in;
-    private int BLOCKED_DOOR_CHANCE = 40; // Percentage chance to block a door between rooms
+    private int blocked_door_chance = 40;
     private final String SAVE_DIRECTORY = "saves/";
 
      /*
@@ -26,15 +26,15 @@ public class DungeonManager {
     }
 
     public void increaseBlockedDoorChance() {
-        this.BLOCKED_DOOR_CHANCE -= 10;
+        this.blocked_door_chance -= 10;
     }
 
     public void decreaseBlockedDoorChance() {
-        this.BLOCKED_DOOR_CHANCE -= 10;
+        this.blocked_door_chance -= 10;
     }
 
     public int getBlockedDoorChance() {
-        return BLOCKED_DOOR_CHANCE;
+        return blocked_door_chance;
     }
 
     public void initializeNewRooms() throws IOException {
@@ -269,7 +269,7 @@ public class DungeonManager {
         int doorsToSet = newRoom.getDoorCount() - 1; // One door is already set
         List<Direction> blockedCandidates = new ArrayList<>();
 
-        if (BLOCKED_DOOR_CHANCE <= 20 && doorsToSet > 0) {
+        if (blocked_door_chance <= 20 && doorsToSet > 0) {
             for (Direction direction : options) {
 
                 int[] adjacentPos = peek(direction, row, col);
@@ -304,7 +304,7 @@ public class DungeonManager {
                     doorsToSet--;
                 } else {
                     int roll = (int)(Math.random() * 100) + 1;
-                    if (roll <= BLOCKED_DOOR_CHANCE) {
+                    if (roll <= blocked_door_chance) {
                         newRoom.setDoorExists(direction.getIndex(), true);
                         newRoom.setBlockedDoor(direction.getIndex(), true);
                         doorsToSet--;
