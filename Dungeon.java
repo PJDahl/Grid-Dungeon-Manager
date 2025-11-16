@@ -287,7 +287,7 @@ public class Dungeon {
                     }
                     break;
                 case "6":
-                    System.out.print("Are you sure you want to update the details of every room in the dungeon? Yes to confirm");
+                    System.out.print("Are you sure you want to update the details of every room in the dungeon? Yes to confirm: ");
                     String confirmUpdate = in.nextLine().trim();
                     if(!confirmUpdate.equalsIgnoreCase("yes")){
                         printWithSeparator("Canceled");
@@ -328,7 +328,7 @@ public class Dungeon {
             return;
         }
 
-        System.out.print("Are you sure you want to delete " + slot + "? Type YES to confirm: ");
+        System.out.print("Are you sure you want to delete save " + slot + "? Type YES to confirm: ");
         String confirm = in.nextLine().trim();
         if (!"YES".equalsIgnoreCase(confirm)) {
             System.out.println("Cancelled.");

@@ -106,7 +106,7 @@ public class DungeonSaver {
             bw.newLine();
             bw.write("#STARTING_ROOM");
             bw.newLine();
-            bw.write(startingRoom);
+            bw.write(startingRoom + "");
             bw.flush();
         }
     }
@@ -148,21 +148,26 @@ public class DungeonSaver {
 
 
     public static boolean deleteSaves(String directory, String slot) throws IOException {
-        Path dir = Paths.get(directory);
-        Path pathAll   = dir.resolve("allRooms" + slot + ".csv");
-        Path pathUnused= dir.resolve("unusedRooms" + slot + ".csv");
-        Path pathGrid  = dir.resolve("roomGrid" + slot + ".csv");
-        Path pathState  = dir.resolve("roomState" + slot + ".csv");
+        String pathAll   = "allRooms" + slot + ".csv";
+        String pathUnused= "unusedRooms" + slot + ".csv";
+        String pathGrid  = "roomGrid" + slot + ".csv";
+        String pathState  = "roomState" + slot + ".csv";
 
         boolean any = false;
-        any |= Files.deleteIfExists(pathAll);
-        any |= Files.deleteIfExists(pathUnused);
-        any |= Files.deleteIfExists(pathGrid);
-        any |= Files.deleteIfExists(pathState);
+        any |= deleteFile(directory, pathAll);
+        any |= deleteFile(directory, pathUnused);
+        any |= deleteFile(directory, pathGrid);
+        any |= deleteFile(directory, pathState);
         return any;
     }
 
     public static boolean emptySlot(String file) {
         return !Files.exists(Paths.get(file));
+    }
+
+    public static boolean deleteFile(String directory, String string) throws IOException {
+        Path dir = Paths.get(directory);
+        Path pathTemp  = dir.resolve(string);
+        return Files.deleteIfExists(pathTemp);
     }
 }

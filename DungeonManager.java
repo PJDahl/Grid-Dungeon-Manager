@@ -106,7 +106,7 @@ public class DungeonManager {
     }
 
     private Room chooseRoom(ArrayList<Room> selectedRooms) {
-        System.out.print("Choose a room by entering its number, or 'C' to cancel. \nTo remove a room from the pool, enter 'R' followed by the room number: ");
+        System.out.print("Choose a room by entering its number, or 'C' to cancel. \nTo remove a room from the pool, enter 'R' followed by the room number.\n ");
         int choice = -1;
         while (choice < 1 || choice > selectedRooms.size()) {
             try {
@@ -587,6 +587,7 @@ public class DungeonManager {
     }
 
     public void updateAllRoomDetails() throws IOException {
+        DungeonSaver.saveRoomState(SAVE_DIRECTORY, "roomStateTemp.csv", new ArrayList<>(allRooms.values()));
         ArrayList<Room> updatedRooms = DungeonLoader.readRooms(".", "rooms.csv");
         for (Room room : updatedRooms) {
             allRooms.put(room.getRoomNumber(), room);
@@ -596,6 +597,10 @@ public class DungeonManager {
                 unusedRooms.add(room);
             }
         }
+        DungeonLoader.loadRoomState(SAVE_DIRECTORY, "roomStateTemp.csv", allRooms);
+        DungeonSaver.deleteFile(SAVE_DIRECTORY, "roomStateTemp.csv");
+        int currentRoomNum = currentRoom.getRoomNumber();
+        currentRoom = getRoom(currentRoomNum);
     }
 
     /*
@@ -609,6 +614,7 @@ public class DungeonManager {
             allRooms.put(room.getRoomNumber(), room);
         }
         unusedRooms = DungeonLoader.readRooms(SAVE_DIRECTORY, "unusedRooms" + slot + ".csv");
+        placedRooms = new ArrayList<>();
         for (Room room : allRooms.values()) {
             if (!unusedRooms.contains(room)) {
                 placedRooms.add(room);
