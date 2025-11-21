@@ -17,6 +17,7 @@ public class DungeonManager {
     private final Scanner in;
     private int blocked_door_chance = 40;
     private final String SAVE_DIRECTORY = "saves/";
+    private int roomAmount = 3;
 
      /*
       * Dungeon initialization and room management
@@ -37,6 +38,11 @@ public class DungeonManager {
     public int getBlockedDoorChance() {
         return blocked_door_chance;
     }
+
+    public void setRoomAmount(int amount) {
+        this.roomAmount = amount;
+    }
+
 
     public void initializeNewRooms() throws IOException {
         ArrayList<Room> loadedRooms = DungeonLoader.readRooms(".", "rooms.csv");
@@ -106,12 +112,12 @@ public class DungeonManager {
     }
 
     private Room chooseRoom(ArrayList<Room> selectedRooms) {
-        System.out.print("Choose a room by entering its number, or 'C' to cancel. \nTo remove a room from the pool, enter 'R' followed by the room number.\n ");
+        System.out.print("Choose a room by entering its number, or 'C' to cancel. \nTo delete a room from the pool, enter 'D' followed by the room number. \nYour choice: ");
         int choice = -1;
         while (choice < 1 || choice > selectedRooms.size()) {
             try {
                 String input = in.nextLine().toUpperCase();
-                if (input.startsWith("R")) {
+                if (input.startsWith("D")) {
                     String roomNumStr = input.substring(1).trim();
                     int roomNum = Integer.parseInt(roomNumStr);
                     Room roomToRemove = null;
@@ -191,7 +197,7 @@ public class DungeonManager {
             return;
         }
 
-        ArrayList<Room> roomOptions = getRandomRooms(3, newPosition);
+        ArrayList<Room> roomOptions = getRandomRooms(roomAmount, newPosition);
         if (roomOptions.isEmpty()) {
             System.out.println("No available rooms meet the prerequisites going " + direction + ". Try another direction.");
             return;

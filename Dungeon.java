@@ -12,7 +12,7 @@ public class Dungeon {
 
         while(!validChoice){
 
-            System.out.println("=== Welome to the Dungeon Manager ===");
+            System.out.println("\n=== Welome to the Dungeon Manager ===");
             System.out.println("1. Continue Dungeon");
             System.out.println("2. New Dungeon");
             System.out.println("3. Delete a save");
@@ -77,10 +77,9 @@ public class Dungeon {
             System.out.println("3. Print room details");
             System.out.println("4. Unlock door");
             System.out.println("5. Manage rooms");
-            System.out.println("6. Increase chance of blocked door");
-            System.out.println("7. Decrease chance of blocked door");
-            System.out.println("8. Show all miniatures in the house");
-            System.out.println("9. Save and Exit");
+            System.out.println("6. Manage drafting");
+            System.out.println("7. Show all miniatures in the house");
+            System.out.println("8. Save and Exit");
             System.out.println("0. Exit without Saving");
             System.out.print("\nEnter your choice: ");
 
@@ -103,14 +102,9 @@ public class Dungeon {
                     manageRoomsMenu(manager, in);
                     break;
                 case "6":
-                    manager.increaseBlockedDoorChance();
-                    printWithSeparator("Chance of blocked door increased to " + manager.getBlockedDoorChance() + "%");
+                    manageDraftingMenu(manager, in);
                     break;
                 case "7":
-                    manager.decreaseBlockedDoorChance();
-                    printWithSeparator("Chance of blocked door decreased to " + manager.getBlockedDoorChance() + "%");
-                    break;
-                case "8":
                     ArrayList<String> miniatures = manager.getAllMiniaturesInHouse();
                     if(miniatures.isEmpty()){
                         printWithSeparator("No miniatures placed in the house.");
@@ -122,7 +116,7 @@ public class Dungeon {
                         printWithSeparator(sb.toString());
                     }
                     break;
-                case "9":
+                case "8":
                     printWithSeparator("Which slot do you want to save on (1 to 5): ");
                     String slot = in.nextLine();
                     if(!checkSlot(slot)){
@@ -156,163 +150,241 @@ public class Dungeon {
         }
     }
 
+    private static void manageDraftingMenu(DungeonManager manager, Scanner in) {
+        System.out.println("\n=== Manage Drafting ===");
+        System.out.println("1. Increase chance of blocked door");
+        System.out.println("2. Decrease chance of blocked door");
+        System.out.println("3. Set drafting to 3 rooms");
+        System.out.println("4. Set drafting to 5 rooms");
+        System.out.println("5. Back to main menu");
+        System.out.print("\nEnter your choice: ");
+
+        String choice = in.nextLine();
+
+        switch (choice) {
+
+            case "1":
+                manager.increaseBlockedDoorChance();
+                printWithSeparator("Chance of blocked door increased to " + manager.getBlockedDoorChance() + "%");
+                break;
+            case "2":
+                manager.decreaseBlockedDoorChance();
+                printWithSeparator("Chance of blocked door decreased to " + manager.getBlockedDoorChance() + "% ");
+                break;
+            case "3":
+                manager.setRoomAmount(3);
+                printWithSeparator("Drafting set to 3 rooms.");
+                break;
+            case "4":
+                manager.setRoomAmount(5);
+                printWithSeparator("Drafting set to 5 rooms.");
+                break;
+            case "5":
+                return; 
+            case "6":
+                return;
+            case "7":
+                return;
+            case "8":
+                return;
+            case "9":
+                return;    
+            default:
+                printWithSeparator("Invalid choice. Please try again.");
+                break;
+        }
+    }
+
     private static void manageRoomsMenu(DungeonManager manager, Scanner in) {
-        while (true){
-            System.out.println("\n=== Manage Rooms ===");
-            System.out.println("1. Go to room by number");
-            System.out.println("2. Set room at coordinates");
-            System.out.println("3. Remove placed room");
-            System.out.println("4. Clear dungeon");
-            System.out.println("5. Clear dungeon except for specific room");
-            System.out.println("6. Update room details");
-            System.out.println("7. Back to main menu");
-            System.out.print("\nEnter your choice: ");
+        System.out.println("\n=== Manage Rooms ===");
+        System.out.println("1. Go to room by number");
+        System.out.println("2. Set room at coordinates");
+        System.out.println("3. Remove placed room");
+        System.out.println("4. Clear dungeon");
+        System.out.println("5. Clear dungeon except for specific room");
+        System.out.println("6. Update room details");
+        System.out.println("7. Back to main menu");
+        System.out.print("\nEnter your choice: ");
 
-            String choice = in.nextLine();
+        String choice = in.nextLine();
 
-            switch (choice) {
-                case "1":
+        switch (choice) {
+            case "1":
+                System.out.print("Enter room number: ");
+                int roomNumber;
+                try {
+                    roomNumber = Integer.parseInt(in.nextLine());
+                } catch (NumberFormatException e) {
+                    printWithSeparator("Invalid room number.");
+                    break;
+                }
+                int result = manager.goToRoomByNumber(roomNumber);
+                if(result == -1){
+                    printWithSeparator("Invalid room number: " + roomNumber);
+                } else if(result == 1){
+                    printWithSeparator("Moved to room number: " + roomNumber);
+                } else {
+                    printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
+                }
+                break;
+            case "2":
 
-                    System.out.print("Enter room number: ");
-                    int roomNumber = Integer.parseInt(in.nextLine());
-                    int result = manager.goToRoomByNumber(roomNumber);
-                    if(result == -1){
-                        printWithSeparator("Invalid room number: " + roomNumber);
-                    } else if(result == 1){
-                        printWithSeparator("Moved to room number: " + roomNumber);
-                    } else {
-                        printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
-                    }
+                System.out.print("Enter room number to place: ");
+                int roomNbr;
+                try {
+                    roomNbr = Integer.parseInt(in.nextLine());
+                } catch (NumberFormatException e) {
+                    printWithSeparator("Invalid room number.");
                     break;
-                case "2":
-
-                    System.out.print("Enter room number to place: ");
-                    int roomNbr = Integer.valueOf(in.nextLine());
-                    Room roomToPlace;
+                }
+                Room roomToPlace;
+                try {
+                    roomToPlace = manager.getRoom(roomNbr);
+                } catch (NullPointerException e){
+                    printWithSeparator("No such room");
+                    break;
+                }
+                System.out.print("Enter target row: ");
+                int targetRow;
+                try {
+                    targetRow = Integer.parseInt(in.nextLine());
+                } catch (NumberFormatException e) {
+                    printWithSeparator("Invalid row number.");
+                    break;
+                }
+                System.out.print("Enter target column: ");
+                int targetCol;
+                try {
+                    targetCol = Integer.parseInt(in.nextLine());
+                } catch (NumberFormatException e) {
+                    printWithSeparator("Invalid column number.");
+                    break;
+                }
+                System.out.print("Enter direction for door (N/S/E/W) or leave blank for random: ");
+                String direction = in.nextLine().trim();
+                Direction dir = null;
+                if(!direction.isEmpty()){
                     try {
-                        roomToPlace = manager.getRoom(roomNbr);
-                    } catch (NullPointerException e){
-                        printWithSeparator("No such room");
+                        dir = Direction.fromChar(direction.charAt(0));
+                    } catch (IllegalArgumentException e){
+                        printWithSeparator("Invalid direction: " + direction);
                         break;
                     }
-                    System.out.print("Enter target row: ");
-                    int targetRow = Integer.valueOf(in.nextLine());
-                    System.out.print("Enter target column: ");
-                    int targetCol = Integer.valueOf(in.nextLine());
-                    System.out.print("Enter direction for door (N/S/E/W) or leave blank for random: ");
-                    String direction = in.nextLine().trim();
-                    Direction dir = null;
-                    if(!direction.isEmpty()){
-                        try {
-                            dir = Direction.fromChar(direction.charAt(0));
-                        } catch (IllegalArgumentException e){
-                            printWithSeparator("Invalid direction: " + direction);
-                            break;
-                        }
-                    }
-                    int placeResult = manager.placeRoom(roomNbr, targetRow, targetCol, dir);
-                    if(placeResult == 1){
-                        printWithSeparator("Room " + roomNbr + " (" + roomToPlace.getName() + ") has been placed at (" + targetRow + "," + targetCol + ")");
-                    }
-                    else if (placeResult == 0){
-                        printWithSeparator("Error: " + roomNbr + " (" + roomToPlace.getName() + ") is already placed in the house");
-                    }
-                    else if (placeResult == -1) {
-                        printWithSeparator("Error: room already exists at (" + targetRow + "," + targetCol + ")");
-                    } 
-                    else if (placeResult == -2){
-                        printWithSeparator("Error: coordinates (" + targetRow + "," + targetCol + ") are outside of house bounds");
-                    }
-                    else if (placeResult == -3){
-                        printWithSeparator("Error: door would lead out of bounds");
-                    }
-                    else {
-                        printWithSeparator("Error: Unknown error");
-                    }
+                }
+                int placeResult = manager.placeRoom(roomNbr, targetRow, targetCol, dir);
+                if(placeResult == 1){
+                    printWithSeparator("Room " + roomNbr + " (" + roomToPlace.getName() + ") has been placed at (" + targetRow + "," + targetCol + ")");
+                }
+                else if (placeResult == 0){
+                    printWithSeparator("Error: " + roomNbr + " (" + roomToPlace.getName() + ") is already placed in the house");
+                }
+                else if (placeResult == -1) {
+                    printWithSeparator("Error: room already exists at (" + targetRow + "," + targetCol + ")");
+                } 
+                else if (placeResult == -2){
+                    printWithSeparator("Error: coordinates (" + targetRow + "," + targetCol + ") are outside of house bounds");
+                }
+                else if (placeResult == -3){
+                    printWithSeparator("Error: door would lead out of bounds");
+                }
+                else {
+                    printWithSeparator("Error: Unknown error");
+                }
+                break;
+            case "3":
+                
+                System.out.print("Enter room number to remove: ");
+                int roomNumbr;
+                try {
+                    roomNumbr = Integer.parseInt(in.nextLine());
+                } catch (NumberFormatException e) {
+                    printWithSeparator("Invalid room number.");
                     break;
-                case "3":
-                    
-                    System.out.print("Enter room number to remove: ");
-                    int roomNumbr = Integer.valueOf(in.nextLine());
-                    Room room;
-                    try {
-                        room = manager.getRoom(roomNumbr);
-                    } catch (NullPointerException e){
-                        printWithSeparator("No such room");
-                        break;
-                    }
-                    printWithSeparator("You want to remove room " + roomNumbr + " (" + room.getName() + "). Are you sure? Yes to confirm");
-                    String confirm = in.nextLine().trim();
-                    if(!confirm.equalsIgnoreCase("yes")){
-                        printWithSeparator("Canceled");
-                        break;
-                    }
-                    System.out.println("Removing room " + roomNumbr + " (" + room.getName() + ")....");
-                    boolean removeResult = manager.removeRoomFromHouse(roomNumbr);
-                    if(removeResult){
-                        printWithSeparator("Room "+ roomNumbr + " (" + room.getName() + ") has been removed from the house");;
-                    } else {
-                        printWithSeparator("Error: Room is not placed in the house");
-                    }
+                }
+                Room room;
+                try {
+                    room = manager.getRoom(roomNumbr);
+                } catch (NullPointerException e){
+                    printWithSeparator("No such room");
                     break;
-                case "4":
-                    printWithSeparator("Are you sure you want to clear the entire dungeon? Yes to confirm");
-                    String confirmClearAll = in.nextLine().trim();
-                    if(!confirmClearAll.equalsIgnoreCase("yes")){
-                        printWithSeparator("Canceled");
-                        break;
-                    }
-                    manager.clearDungeon();
-                    printWithSeparator("Dungeon has been cleared. Current position set to starting position.");
+                }
+                printWithSeparator("You want to remove room " + roomNumbr + " (" + room.getName() + "). Are you sure? Yes to confirm");
+                String confirm = in.nextLine().trim();
+                if(!confirm.equalsIgnoreCase("yes")){
+                    printWithSeparator("Canceled");
                     break;
-                case "5":
-                    System.out.print("Which room do you not want to remove?");
-                    int roomToSave = Integer.parseInt(in.nextLine());
-                    try {
-                        printWithSeparator("Are you sure you want to clear the dungeon, except for room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +")? Yes to confirm");
-                    } catch (NullPointerException e){
-                        printWithSeparator("No such room");
-                        break;
-                    }
-                    String confirmClear = in.nextLine().trim();
-                    if(!confirmClear.equalsIgnoreCase("yes")){
-                        printWithSeparator("Canceled");
-                        break;
-                    }
-                    int clearResult = manager.clearDungeonButOneRoom(roomToSave);
-                    if (clearResult == 1){
-                        printWithSeparator("Dungeon cleard, except for room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +")");
-                    } else{
-                        printWithSeparator("Error: Room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +") is not placed.");
-                    }
+                }
+                System.out.println("Removing room " + roomNumbr + " (" + room.getName() + ")....");
+                boolean removeResult = manager.removeRoomFromHouse(roomNumbr);
+                if(removeResult){
+                    printWithSeparator("Room "+ roomNumbr + " (" + room.getName() + ") has been removed from the house");;
+                } else {
+                    printWithSeparator("Error: Room is not placed in the house");
+                }
+                break;
+            case "4":
+                printWithSeparator("Are you sure you want to clear the entire dungeon? Yes to confirm");
+                String confirmClearAll = in.nextLine().trim();
+                if(!confirmClearAll.equalsIgnoreCase("yes")){
+                    printWithSeparator("Canceled");
                     break;
-                case "6":
-                    System.out.print("Are you sure you want to update the details of every room in the dungeon? Yes to confirm: ");
-                    String confirmUpdate = in.nextLine().trim();
-                    if(!confirmUpdate.equalsIgnoreCase("yes")){
-                        printWithSeparator("Canceled");
-                        break;
-                    }
-                    try {
-                        manager.updateAllRoomDetails();
-                    } catch (IOException e) {
-                        printWithSeparator("An error occurred while updating room details: " + e.getMessage());
-                        break;
-                    }
-                    printWithSeparator("All room details have been updated.");
-                    break; 
-                case "7":
-                    return;     
-                case "8":
-                    return;
-                case "9":
-                    return;
-                case "0":
-                    return;
-                default:
-                    printWithSeparator("Invalid choice. Please try again.");
+                }
+                manager.clearDungeon();
+                printWithSeparator("Dungeon has been cleared. Current position set to starting position.");
+                break;
+            case "5":
+                System.out.print("Which room do you not want to remove?");
+                int roomToSave;
+                try {
+                    roomToSave = Integer.parseInt(in.nextLine());
+                } catch (NumberFormatException e) {
+                    printWithSeparator("Invalid room number.");
                     break;
-            }
+                }
+                try {
+                    printWithSeparator("Are you sure you want to clear the dungeon, except for room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +")? Yes to confirm");
+                } catch (NullPointerException e){
+                    printWithSeparator("No such room");
+                    break;
+                }
+                String confirmClear = in.nextLine().trim();
+                if(!confirmClear.equalsIgnoreCase("yes")){
+                    printWithSeparator("Canceled");
+                    break;
+                }
+                int clearResult = manager.clearDungeonButOneRoom(roomToSave);
+                if (clearResult == 1){
+                    printWithSeparator("Dungeon cleard, except for room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +")");
+                } else{
+                    printWithSeparator("Error: Room " + roomToSave + " (" + manager.getRoom(roomToSave).getName() +") is not placed.");
+                }
+                break;
+            case "6":
+                System.out.print("Are you sure you want to update the details of every room in the dungeon? Yes to confirm: ");
+                String confirmUpdate = in.nextLine().trim();
+                if(!confirmUpdate.equalsIgnoreCase("yes")){
+                    printWithSeparator("Canceled");
+                    break;
+                }
+                try {
+                    manager.updateAllRoomDetails();
+                } catch (IOException e) {
+                    printWithSeparator("An error occurred while updating room details: " + e.getMessage());
+                    break;
+                }
+                printWithSeparator("All room details have been updated.");
+                break; 
+            case "7":
+                return;     
+            case "8":
+                return;
+            case "9":
+                return;
+            case "0":
+                return;
+            default:
+                printWithSeparator("Invalid choice. Please try again.");
+                break;
         }
     }
 
