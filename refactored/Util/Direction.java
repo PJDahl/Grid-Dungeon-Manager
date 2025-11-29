@@ -1,3 +1,5 @@
+package refactored.util;
+
 public enum Direction {
     North(0, +1, 0),
     East(1, 0, +1),
