@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import refactored.util.Direction;
@@ -16,21 +17,20 @@ public class DungeonManager {
     private ArrayList<Room> placedRooms;
     private HashMap<Integer, Room> allRooms = new HashMap<>();
     private Position currentPosition;
-    private Position startPosition;
     private Room currentRoom;
     private Room startingRoom;
     private int blocked_door_chance = 40;
     private int roomAmount = 3;
 
     /* 
-     * Dungeon Initialization
+     * Dungeon Life Cycle Methods
+     * Start a new dungeon, load a dungeon, save a dungeon, clear dungeon
      */
 
     public void newDungeon(Position startPos, Position goalPos) {
-        startPosition = startPos;
         initializeNewRooms();
         houseGrid = new int[7][5];
-        initializeStartAndGoalRooms(goalPos);
+        initializeStartAndGoalRooms(startPos, goalPos);
     }
 
     private void initializeNewRooms() {
@@ -39,7 +39,7 @@ public class DungeonManager {
         placedRooms = new ArrayList<>();
     }
 
-    private void initializeStartAndGoalRooms(Position goalPosition) { 
+    private void initializeStartAndGoalRooms(Position startPosition, Position goalPosition) { 
         Room goalRoom = allRooms.get(1);
         unusedRooms.remove(goalRoom);
         placedRooms.add(goalRoom);
@@ -69,6 +69,94 @@ public class DungeonManager {
 
     public void saveDungeon(String slot) throws IOException {
         repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition);
+    }
+
+    public int clearDungeon(Integer roomToSave) {
+        return clearDungeonInternal(roomToSave);
+    }
+
+    public int clearDungeon() {
+        return clearDungeonInternal(null);
+    }
+
+    // Returns: -1 roomToSave invalid, 0 roomToSave not placed, 1 success
+    private int clearDungeonInternal(Integer roomToSave) {
+        int startRoomNum = startingRoom.getRoomNumber();
+        int goalRoomNum  = 1;
+        HashSet<Integer> roomsToKeep = new HashSet<>();
+        roomsToKeep.add(startRoomNum);
+        roomsToKeep.add(goalRoomNum);
+
+        if (roomToSave != null) {
+            if (!allRooms.containsKey(roomToSave)) {
+                return -1;
+            }
+            if (!placedRooms.contains(allRooms.get(roomToSave))) {
+                return 0;
+            }
+            
+            roomsToKeep.add(roomToSave);
+        }
+
+        unusedRooms.addAll(placedRooms);
+        unusedRooms.removeIf(room -> roomsToKeep.contains(room.getRoomNumber()));
+
+        placedRooms.clear();
+        placedRooms.add(startingRoom);
+        placedRooms.add(allRooms.get(goalRoomNum));
+        if(roomToSave != null){
+            placedRooms.add(allRooms.get(roomToSave));
+        }
+
+        for (int row = 0; row < houseGrid.length; row++) {
+            for (int col = 0; col < houseGrid[0].length; col++) {
+                int roomNum = houseGrid[row][col];
+                if (!roomsToKeep.contains(roomNum)) {
+                    houseGrid[row][col] = 0;
+                }
+            }
+        }
+
+        for (Room room : allRooms.values()) {
+            if (room != null) {
+                if (!roomsToKeep.contains(room.getRoomNumber())) {  
+                    for (int i = 0; i < 4; i++) {
+                        room.setDoorExists(i, false);
+                        room.setLockStatus(i, false);
+                        room.setBlockedDoor(i, false);
+                    }
+                    room.updateConnections();
+                } else {
+                    for (int i = 0; i < 4; i++){
+                        room.setBlockedDoor(i, false);
+                    }
+                }      
+            }
+        }
+
+        if(roomToSave != null){
+            Position pos = getRoomPosition(roomToSave);
+            currentPosition = pos;
+            currentRoom = allRooms.get(roomToSave);
+        } else {
+            currentPosition = getRoomPosition(startRoomNum);
+            currentRoom = startingRoom;
+        }
+        return 1;
+    }
+
+    /*
+     * Helper Methods
+     */
+    private Position getRoomPosition(int roomNumber) { 
+        for (int row = 0; row < houseGrid.length; row++) {
+            for (int col = 0; col < houseGrid[0].length; col++) {
+                if (houseGrid[row][col] == roomNumber) {
+                    return new Position(row, col);
+                }
+            }
+        }
+        return null;
     }
 
     /* 
