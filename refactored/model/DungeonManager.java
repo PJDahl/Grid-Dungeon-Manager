@@ -159,6 +159,10 @@ public class DungeonManager {
         return null;
     }
 
+    public boolean roomIsPlaced(int roomNumber){
+        return placedRooms.contains(allRooms.get(roomNumber));
+    }
+
     /* 
      * Getters
      */
@@ -176,5 +180,17 @@ public class DungeonManager {
         return row >= 0 && row < houseGrid.length && col >= 0 && col < houseGrid[0].length;
     }
 
+    /*
+     * Room Placement Methods
+     */
+    public void placeRoom(Room room, Position position, Direction fromDirection) {
+        placedRooms.add(room);
+        unusedRooms.remove(room);
+        houseGrid[position.row()][position.col()] = room.getRoomNumber();
+
+        Direction toDirection = fromDirection.opposite();
+        room.setDoorExists(toDirection.getIndex(), true);
+        setDoorsInNewRoom(room, position, fromDirection);
+    }
     
 }
