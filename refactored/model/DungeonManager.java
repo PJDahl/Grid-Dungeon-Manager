@@ -64,6 +64,7 @@ public class DungeonManager {
         houseGrid = repo.loadGrid(slot);
         currentPosition = repo.loadPosition(slot);
         repo.loadRoomStates(slot, allRooms);
+        startingRoom = allRooms.get(2);
         currentRoom = allRooms.get(houseGrid[currentPosition.row()][currentPosition.col()]);
     }
 
@@ -172,7 +173,9 @@ public class DungeonManager {
     public Room getCurrentRoom() { return currentRoom;}
 
 
-    private boolean isInBounds(int row, int col) {
+    private boolean isInBounds(Position pos) {
+        int row = pos.row();
+        int col = pos.col();
         return row >= 0 && row < houseGrid.length && col >= 0 && col < houseGrid[0].length;
     }
 
