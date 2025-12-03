@@ -12,6 +12,7 @@ import refactored.util.Direction;
 import refactored.util.MoveOutcome;
 import refactored.util.Position;
 import refactored.util.RoomOutcome;
+import refactored.util.UnlockOutcome;
 
 public class DungeonManager {
     private DungeonRepository repo = new DungeonRepository();
@@ -25,6 +26,8 @@ public class DungeonManager {
     private int blockedDoorChance = 40;
     private int roomAmount = 3;
     private static final int GOAL_ROOM_NUMBER = 1;
+
+
 
     /* 
      * Dungeon Life Cycle Methods
@@ -77,16 +80,15 @@ public class DungeonManager {
         repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition);
     }
 
-    public int clearDungeon(Integer roomToSave) {
+    public RoomOutcome clearDungeon(Integer roomToSave) {
         return clearDungeonInternal(roomToSave);
     }
 
-    public int clearDungeon() {
+    public RoomOutcome clearDungeon() {
         return clearDungeonInternal(null);
     }
 
-    // Returns: -1 roomToSave invalid, 0 roomToSave not placed, 1 success
-    private int clearDungeonInternal(Integer roomToSave) {
+    private RoomOutcome clearDungeonInternal(Integer roomToSave) {
         int startRoomNum = startingRoom.getRoomNumber();
         HashSet<Integer> roomsToKeep = new HashSet<>();
         roomsToKeep.add(startRoomNum);
@@ -94,10 +96,10 @@ public class DungeonManager {
 
         if (roomToSave != null) {
             if (!allRooms.containsKey(roomToSave)) {
-                return -1;
+                return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
             }
             if (!placedRooms.contains(allRooms.get(roomToSave))) {
-                return 0;
+                return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_PLACED);
             }
             
             roomsToKeep.add(roomToSave);
@@ -147,8 +149,10 @@ public class DungeonManager {
             currentPosition = getRoomPosition(startRoomNum);
             currentRoom = startingRoom;
         }
-        return 1;
+        return new RoomOutcome.Cleared();
     }
+
+
 
     /*
      * Helper Methods
@@ -167,6 +171,8 @@ public class DungeonManager {
     public boolean roomIsPlaced(int roomNumber){
         return placedRooms.contains(allRooms.get(roomNumber));
     }
+
+
 
     /* 
      * Getters
@@ -188,6 +194,8 @@ public class DungeonManager {
         int col = pos.col();
         return row >= 0 && row < houseGrid.length && col >= 0 && col < houseGrid[0].length;
     }
+
+
 
     /*
      * Dungeon Configuration Methods
@@ -236,6 +244,19 @@ public class DungeonManager {
     /*
      * Movement and Room handling Methods
      */
+    public MoveOutcome goToRoomByRoomNumber(int roomNumber) {
+        if (!allRooms.containsKey(roomNumber)) {
+            return new MoveOutcome.Blocked(BlockedReason.INVALID_ROOM_NUMBER);
+        }
+        Position position = getRoomPosition(roomNumber);
+        if(position != null){
+            currentPosition = position;
+            currentRoom = getRoom(roomNumber);
+            return new MoveOutcome.Moved(currentRoom, currentPosition);
+        }
+        return new MoveOutcome.Blocked(BlockedReason.ROOM_NOT_PLACED);
+    }
+
     public MoveOutcome tryToMove(Direction direction) {
         Position newPosition = currentPosition.move(direction);
         if (!isInBounds(newPosition)) {
@@ -256,6 +277,9 @@ public class DungeonManager {
         int nextRoomNumber = houseGrid[newPosition.row()][newPosition.col()];
         if (nextRoomNumber == 0) {
             List<Room> options = getRandomRooms(newPosition);
+            if (options.isEmpty()) {
+                return new MoveOutcome.Blocked(BlockedReason.NO_ROOM_OPTIONS);
+            }
             return new MoveOutcome.NeedsPlacement(options, newPosition);
         }
 
@@ -379,8 +403,9 @@ public class DungeonManager {
     }
 
 
+
     /*
-     * Helper Methods for Room Placement
+     * Door Configuration Methods
      */
     private void setDoorsInRoom(Room roomToPlace, Position targetPosition, Direction fromDirection) {
          roomToPlace.setDoorExists(fromDirection.opposite().getIndex(), true);
@@ -475,6 +500,21 @@ public class DungeonManager {
         }
 
         roomToPlace.updateConnections();
+    }
+
+    public UnlockOutcome unlockDoor(Direction direction) {
+        int dirIndex = direction.getIndex();
+        if (!currentRoom.doesDoorExist(dirIndex)) {
+            return UnlockOutcome.NO_DOOR;
+        }
+        if(currentRoom.isDoorBlocked(dirIndex)) {
+            return UnlockOutcome.DOOR_BLOCKED;
+        }
+        if (!currentRoom.isDoorLocked(dirIndex)) {
+            return UnlockOutcome.ALREADY_UNLOCKED;
+        }
+        currentRoom.setLockStatus(dirIndex, false);
+        return UnlockOutcome.UNLOCKED;
     }
     
 }

@@ -9,5 +9,7 @@ public interface RoomOutcome {
     record Removed(Room removedRoom, Position oldPosition) implements RoomOutcome {}
     
     record Failed(BlockedReason reason) implements RoomOutcome {}
+
+    record Cleared() implements RoomOutcome {}
     
 }
