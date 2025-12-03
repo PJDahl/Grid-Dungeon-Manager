@@ -7,8 +7,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import refactored.util.BlockedReason;
 import refactored.util.Direction;
+import refactored.util.MoveOutcome;
 import refactored.util.Position;
+import refactored.util.RoomOutcome;
 
 public class DungeonManager {
     private DungeonRepository repo = new DungeonRepository();
@@ -19,8 +22,9 @@ public class DungeonManager {
     private Position currentPosition;
     private Room currentRoom;
     private Room startingRoom;
-    private int blocked_door_chance = 40;
+    private int blockedDoorChance = 40;
     private int roomAmount = 3;
+    private static final int GOAL_ROOM_NUMBER = 1;
 
     /* 
      * Dungeon Life Cycle Methods
@@ -40,7 +44,7 @@ public class DungeonManager {
     }
 
     private void initializeStartAndGoalRooms(Position startPosition, Position goalPosition) { 
-        Room goalRoom = allRooms.get(1);
+        Room goalRoom = allRooms.get(GOAL_ROOM_NUMBER);
         unusedRooms.remove(goalRoom);
         placedRooms.add(goalRoom);
         houseGrid[goalPosition.row()][goalPosition.col()] = goalRoom.getRoomNumber();
@@ -61,6 +65,7 @@ public class DungeonManager {
     public void loadDungeon(String slot) throws IOException {
         allRooms = repo.loadAllRooms(slot);
         unusedRooms = repo.loadUnusedRooms(slot);
+        placedRooms = repo.loadPlacedRooms(slot, allRooms);
         houseGrid = repo.loadGrid(slot);
         currentPosition = repo.loadPosition(slot);
         repo.loadRoomStates(slot, allRooms);
@@ -83,10 +88,9 @@ public class DungeonManager {
     // Returns: -1 roomToSave invalid, 0 roomToSave not placed, 1 success
     private int clearDungeonInternal(Integer roomToSave) {
         int startRoomNum = startingRoom.getRoomNumber();
-        int goalRoomNum  = 1;
         HashSet<Integer> roomsToKeep = new HashSet<>();
         roomsToKeep.add(startRoomNum);
-        roomsToKeep.add(goalRoomNum);
+        roomsToKeep.add(GOAL_ROOM_NUMBER);
 
         if (roomToSave != null) {
             if (!allRooms.containsKey(roomToSave)) {
@@ -104,7 +108,7 @@ public class DungeonManager {
 
         placedRooms.clear();
         placedRooms.add(startingRoom);
-        placedRooms.add(allRooms.get(goalRoomNum));
+        placedRooms.add(allRooms.get(GOAL_ROOM_NUMBER));
         if(roomToSave != null){
             placedRooms.add(allRooms.get(roomToSave));
         }
@@ -175,6 +179,8 @@ public class DungeonManager {
     public Position getCurrentPosition() { return currentPosition;}
 
     public Room getCurrentRoom() { return currentRoom;}
+    
+    public int getBlockedDoorChance() { return blockedDoorChance;}
 
 
     private boolean isInBounds(Position pos) {
@@ -184,16 +190,291 @@ public class DungeonManager {
     }
 
     /*
-     * Room Placement Methods
+     * Dungeon Configuration Methods
      */
-    public void placeRoom(Room room, Position position, Direction fromDirection) {
-        placedRooms.add(room);
-        unusedRooms.remove(room);
-        houseGrid[position.row()][position.col()] = room.getRoomNumber();
+    private void changeBlockedDoorChance(int change) {
+        blockedDoorChance += change;
+        if (blockedDoorChance < 0) {
+            blockedDoorChance = 0;
+        } else if (blockedDoorChance > 100) {
+            blockedDoorChance = 100;
+        }
+    }
 
-        Direction toDirection = fromDirection.opposite();
-        room.setDoorExists(toDirection.getIndex(), true);
-        setDoorsInNewRoom(room, position, fromDirection);
+    public int increaseBlockedDoorChance() {
+        changeBlockedDoorChance(10);
+        return blockedDoorChance;
+    }
+
+    public int decreaseBlockedDoorChance() {
+        changeBlockedDoorChance(-10);
+        return blockedDoorChance;
+    }
+
+    private void setRoomAmount(int amount) {
+        if (amount < 1) {
+            roomAmount = 1;
+        } else if (amount > 10) {
+            roomAmount = 10;
+        } else {
+            roomAmount = amount;
+        }
+    }
+
+    public int setRoomAmountToFive() {
+        setRoomAmount(5);
+        return roomAmount;
+    }
+
+    public int setRoomAmountToThree() {
+        setRoomAmount(3);
+        return roomAmount;
+    }
+
+
+
+    /*
+     * Movement and Room handling Methods
+     */
+    public MoveOutcome tryToMove(Direction direction) {
+        Position newPosition = currentPosition.move(direction);
+        if (!isInBounds(newPosition)) {
+            return new MoveOutcome.Blocked(BlockedReason.OUT_OF_BOUNDS);
+        }
+
+        int dirIndex = direction.getIndex();
+        if (!currentRoom.doesDoorExist(dirIndex)) {
+            return new MoveOutcome.Blocked(BlockedReason.NO_DOOR);
+        }
+        if (currentRoom.isDoorBlocked(dirIndex)) {
+            return new MoveOutcome.Blocked(BlockedReason.DOOR_BLOCKED);
+        }
+        if (currentRoom.isDoorLocked(dirIndex)) {
+            return new MoveOutcome.Blocked(BlockedReason.DOOR_LOCKED);
+        }
+        
+        int nextRoomNumber = houseGrid[newPosition.row()][newPosition.col()];
+        if (nextRoomNumber == 0) {
+            List<Room> options = getRandomRooms(newPosition);
+            return new MoveOutcome.NeedsPlacement(options, newPosition);
+        }
+
+        Room nextRoom = allRooms.get(nextRoomNumber);
+        currentPosition = newPosition;
+        currentRoom = nextRoom;
+        return new MoveOutcome.Moved(nextRoom, newPosition);
+    }
+
+    private List<Room> getRandomRooms(Position targetPosition) {
+        ArrayList<Room> pool = new ArrayList<>(unusedRooms);
+        ArrayList<Room> selectedRooms = new ArrayList<>();
+
+        Collections.shuffle(pool);
+
+        for (Room room : pool) {
+            if (checkRoomPrerequisites(room, targetPosition)) {
+                selectedRooms.add(room);
+                if (selectedRooms.size() >= roomAmount) {
+                    break;
+                }
+            }
+        }
+        return selectedRooms;
+    }
+
+    private boolean checkRoomPrerequisites(Room room, Position targetPosition) {
+        int row = targetPosition.row();
+        int col = targetPosition.col();
+        int numRows = houseGrid.length-1;
+        int numCols = houseGrid[0].length-1;
+        boolean atEdge = row == 0 || row == numRows || col == 0 || col == numCols;
+        boolean atCorner = (row == 0 && col == 0) || (row == 0 && col == numCols) || (row == numRows && col == 0) || (row == numRows && col == numCols);
+
+        String prereq = room.getPrerequisite();
+        if (prereq == null) {
+            return true;
+        } else if (prereq.equalsIgnoreCase("edge") && atEdge) {
+            return true;
+        } else if (prereq.equalsIgnoreCase("center") && !atEdge) {
+            return true;
+        } else if (prereq.equalsIgnoreCase("NonCornerEdge") && !atCorner && atEdge) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void placeRoom(Room roomToPlace, Position targetPosition, Direction fromDirection, boolean moveInto) {
+        houseGrid[targetPosition.row()][targetPosition.col()] = roomToPlace.getRoomNumber();
+        unusedRooms.remove(roomToPlace);
+        placedRooms.add(roomToPlace);
+        setDoorsInRoom(roomToPlace, targetPosition, fromDirection);
+        if (moveInto) {
+            currentPosition = targetPosition;
+            currentRoom = roomToPlace;
+        }
+    }
+
+    public RoomOutcome forcePlaceRoom(int roomNumber, Position targetPosition, Direction fromDirection) {
+        if(!isInBounds(targetPosition)) {
+            return new RoomOutcome.Failed(BlockedReason.OUT_OF_BOUNDS);
+        }
+        if (houseGrid[targetPosition.row()][targetPosition.col()] != 0) {
+            return new RoomOutcome.Failed(BlockedReason.TARGET_OCCUPIED);
+        }
+        if(!allRooms.containsKey(roomNumber)){
+            return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
+        }
+        Room roomToPlace = allRooms.get(roomNumber);
+        if(!unusedRooms.contains(roomToPlace)){
+            return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_IN_POOL);
+        }
+        if(placedRooms.contains(roomToPlace)){
+            return new RoomOutcome.Failed(BlockedReason.ROOM_ALREADY_PLACED);
+        }
+        if(!checkRoomPrerequisites(roomToPlace, targetPosition)){
+            return new RoomOutcome.Failed(BlockedReason.PREREQUISITES_NOT_MET);
+        }
+        Position doorLeadsTo = targetPosition.move(fromDirection.opposite());
+        if(!isInBounds(doorLeadsTo)){
+            return new RoomOutcome.Failed(BlockedReason.DOOR_LEADS_OUT_OF_BOUNDS);
+        }
+        placeRoom(roomToPlace, targetPosition, fromDirection, false);
+        return new RoomOutcome.Placed(roomToPlace, targetPosition);
+    }
+
+    public RoomOutcome removeRoomFromHouse(int roomNumber) {
+        if(!allRooms.containsKey(roomNumber)){
+            return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
+        }
+        Room roomToRemove = allRooms.get(roomNumber);
+        if(!placedRooms.contains(roomToRemove)){
+            return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_PLACED);
+        }
+        Position roomPosition = getRoomPosition(roomNumber);
+        houseGrid[roomPosition.row()][roomPosition.col()] = 0;
+        placedRooms.remove(roomToRemove);
+        unusedRooms.add(roomToRemove);
+
+        for (int i = 0; i < 4; i++) {
+            roomToRemove.setDoorExists(i, false);
+            roomToRemove.setLockStatus(i, false);
+            roomToRemove.setBlockedDoor(i, false);
+        }
+        roomToRemove.updateConnections();
+
+        return new RoomOutcome.Removed(roomToRemove, roomPosition);
+    }
+
+    public RoomOutcome removeRoomFromPool(int roomNumber) {
+        if(!allRooms.containsKey(roomNumber)){
+            return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
+        }
+        Room roomToRemove = allRooms.get(roomNumber);
+        if(!unusedRooms.contains(roomToRemove)){
+            return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_IN_POOL);
+        }
+        unusedRooms.remove(roomToRemove);
+        return new RoomOutcome.Removed(roomToRemove, null);
+    }
+
+
+    /*
+     * Helper Methods for Room Placement
+     */
+    private void setDoorsInRoom(Room roomToPlace, Position targetPosition, Direction fromDirection) {
+         roomToPlace.setDoorExists(fromDirection.opposite().getIndex(), true);
+
+        List<Direction> options = new ArrayList<>();
+        
+        for (Direction dir : Direction.values()) {
+            if (dir != fromDirection.opposite()) {
+                Position adjacentPosition = targetPosition.move(dir);
+                if (isInBounds(adjacentPosition)) {
+                    options.add(dir);
+                }
+            }
+        }
+        Collections.shuffle(options);
+
+        int doorsToSet = roomToPlace.getDoorCount() - 1; // One door is already set
+        List<Direction> blockedCandidates = new ArrayList<>();
+
+        Direction goalDirection = null;
+        if (blockedDoorChance <= 20 && doorsToSet > 0) {
+            for (Direction direction : options) {
+
+                Position adjacentPosition = targetPosition.move(direction);
+                int neighborRoomNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
+                if (neighborRoomNum == GOAL_ROOM_NUMBER && getRoom(neighborRoomNum).doesDoorExist(direction.opposite().getIndex())) {
+                    roomToPlace.setDoorExists(direction.getIndex(), true);
+                    doorsToSet--;
+                    goalDirection = direction;
+                    break;
+                }
+                    
+            }
+        }
+        if(goalDirection != null){
+            options.remove(goalDirection);
+        }
+
+        for (Direction direction : options) {
+            if (doorsToSet <= 0) break;
+
+            Position adjacentPosition = targetPosition.move(direction);
+            int neighborRoomNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
+            if (neighborRoomNum == 0) {
+                roomToPlace.setDoorExists(direction.getIndex(), true);
+                if(roomToPlace.locked()) {
+                    roomToPlace.setLockStatus(direction.getIndex(), true);
+                }
+                doorsToSet--;
+            } else {
+                Room neighborRoom = getRoom(neighborRoomNum);
+                if (neighborRoom.doesDoorExist(direction.opposite().getIndex())) {
+                    roomToPlace.setDoorExists(direction.getIndex(), true);
+                    if (neighborRoom.getLockedDoors()[direction.opposite().getIndex()]){
+                        neighborRoom.setLockStatus(direction.opposite().getIndex(), false);
+                    }
+                    doorsToSet--;
+                } else {
+                    int roll = (int)(Math.random() * 100) + 1;
+                    if (roll <= blockedDoorChance) {
+                        roomToPlace.setDoorExists(direction.getIndex(), true);
+                        roomToPlace.setBlockedDoor(direction.getIndex(), true);
+                        doorsToSet--;
+                    } else {
+                        blockedCandidates.add(direction);
+                    }
+                }       
+            }
+        }
+
+        if (doorsToSet > 0 && !blockedCandidates.isEmpty()) {
+            for (Direction dir : blockedCandidates) {
+                if (doorsToSet <= 0) break;
+                roomToPlace.setDoorExists(dir.getIndex(), true);
+                roomToPlace.setBlockedDoor(dir.getIndex(), true);
+                doorsToSet--;
+            }
+        }
+
+        for (Direction direction : Direction.values()) {
+            Position adjacentPosition = targetPosition.move(direction);
+            if (isInBounds(adjacentPosition)){
+                int neighborNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
+                if (neighborNum != 0) {
+                    Room neighbor = getRoom(neighborNum);
+                    int neighborDoorIndex = direction.opposite().getIndex();
+                    if (neighbor.doesDoorExist(neighborDoorIndex) && !roomToPlace.doesDoorExist(direction.getIndex())) {
+                        neighbor.setBlockedDoor(neighborDoorIndex, true);
+                    }
+                }
+            }
+        }
+
+        roomToPlace.updateConnections();
     }
     
 }

@@ -36,6 +36,14 @@ public class Room {
         return directionIndex >= 0 && directionIndex < doors.length && doors[directionIndex];
     }
 
+    public boolean isDoorBlocked(int directionIndex) {
+        return directionIndex >= 0 && directionIndex < blockedDoors.length && blockedDoors[directionIndex];
+    }
+
+    public boolean isDoorLocked(int directionIndex) {
+        return directionIndex >= 0 && directionIndex < lockedDoors.length && lockedDoors[directionIndex];
+    }
+
     public void updateConnections() {
         StringBuilder sb = new StringBuilder();
         String[] dirLabels = {"N", "E", "S", "W"};

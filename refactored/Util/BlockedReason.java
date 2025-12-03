@@ -1,0 +1,19 @@
+package refactored.util;
+
+public enum BlockedReason {
+    CANCELLED,
+    OUT_OF_BOUNDS,
+    NO_DOOR,
+    DOOR_LOCKED,
+    DOOR_BLOCKED,
+    NO_ROOM_OPTIONS,
+    NO_ROOM,
+    ROOM_NOT_PLACED,
+    ROOM_NOT_IN_POOL,
+    INVALID_ROOM_NUMBER,
+    ROOM_ALREADY_PLACED,
+    TARGET_OCCUPIED,
+    DOOR_LEADS_OUT_OF_BOUNDS,
+    PREREQUISITES_NOT_MET,
+    UNKNOWN
+}

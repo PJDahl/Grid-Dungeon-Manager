@@ -38,4 +38,9 @@ public class DungeonRepository {
         throw new UnsupportedOperationException("Unimplemented method 'save'");
     }
 
+    public ArrayList<Room> loadPlacedRooms(String slot, HashMap<Integer,Room> allRooms) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'loadPlacedRooms'");
+    }
+
 }
