@@ -2,6 +2,8 @@ package refactored.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import refactored.util.Position;
 
@@ -12,35 +14,14 @@ public class DungeonRepository {
         return new HashMap<>();
     }
 
-    public ArrayList<Room> loadUnusedRooms(String slot) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'loadUnusedRooms'");
+    public DungeonSaveData loadSaveData(String slot) {
+        // Implementation to load saved rooms from a data source
+        return new DungeonSaveData();
     }
 
-    public int[][] loadGrid(String slot) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'loadGrid'");
-    }
-
-    public Position loadPosition(String slot) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'loadPosition'");
-    }
-
-    public void loadRoomStates(String slot, HashMap<Integer,Room> allRooms) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'loadRoomStates'");
-    }
-
-    public void save(String slot, HashMap<Integer,Room> allRooms, ArrayList<Room> unusedRooms, int[][] houseGrid,
-            Position currentPosition) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
-    }
-
-    public ArrayList<Room> loadPlacedRooms(String slot, HashMap<Integer,Room> allRooms) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'loadPlacedRooms'");
+    public void save(String slot, Map<Integer, Room> allRooms, List<Room> unusedRooms, int[][] houseGrid,
+                     Position currentPosition, int startingRoomId, int blockedDoorChance, int roomAmount) {
+        // Implementation to save rooms to a data source
     }
 
 }

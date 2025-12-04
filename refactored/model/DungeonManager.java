@@ -67,17 +67,11 @@ public class DungeonManager {
 
     public void loadDungeon(String slot) throws IOException {
         allRooms = repo.loadAllRooms(slot);
-        unusedRooms = repo.loadUnusedRooms(slot);
-        placedRooms = repo.loadPlacedRooms(slot, allRooms);
-        houseGrid = repo.loadGrid(slot);
-        currentPosition = repo.loadPosition(slot);
-        repo.loadRoomStates(slot, allRooms);
-        startingRoom = allRooms.get(2);
-        currentRoom = allRooms.get(houseGrid[currentPosition.row()][currentPosition.col()]);
+        DungeonSaveData saveData = repo.loadSaveData(slot);
     }
 
     public void saveDungeon(String slot) throws IOException {
-        repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition);
+        repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition, startingRoom.getRoomNumber(), blockedDoorChance, roomAmount);
     }
 
     public RoomOutcome clearDungeon(Integer roomToSave) {
