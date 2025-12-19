@@ -1,4 +1,4 @@
-package refactored.util;
+package util;
 
 public enum UnlockOutcome {
     UNLOCKED,

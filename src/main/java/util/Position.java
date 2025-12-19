@@ -1,4 +1,4 @@
-package refactored.util;
+package util;
 
 public record Position(int row, int col) {
     

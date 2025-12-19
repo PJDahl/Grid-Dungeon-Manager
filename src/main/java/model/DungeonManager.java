@@ -1,4 +1,4 @@
-package refactored.model;
+package model;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,26 +6,28 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
-import refactored.util.BlockedReason;
-import refactored.util.Direction;
-import refactored.util.MoveOutcome;
-import refactored.util.Position;
-import refactored.util.RoomOutcome;
-import refactored.util.UnlockOutcome;
+import util.BlockedReason;
+import util.Direction;
+import util.MoveOutcome;
+import util.Position;
+import util.RoomOutcome;
+import util.UnlockOutcome;
 
 public class DungeonManager {
     private DungeonRepository repo = new DungeonRepository();
     private int[][] houseGrid;
     private ArrayList<Room> unusedRooms;
     private ArrayList<Room> placedRooms;
-    private HashMap<Integer, Room> allRooms = new HashMap<>();
+    private Map<Integer, Room> allRooms;
     private Position currentPosition;
     private Room currentRoom;
     private Room startingRoom;
     private int blockedDoorChance = 40;
     private int roomAmount = 3;
     private static final int GOAL_ROOM_NUMBER = 1;
+    private Integer currentSaveSlot = null;
 
 
 
@@ -34,26 +36,26 @@ public class DungeonManager {
      * Start a new dungeon, load a dungeon, save a dungeon, clear dungeon
      */
 
-    public void newDungeon(Position startPos, Position goalPos) {
+    public void newDungeon(Position startPos, Position goalPos) throws IOException {
         initializeNewRooms();
         houseGrid = new int[7][5];
         initializeStartAndGoalRooms(startPos, goalPos);
     }
 
-    private void initializeNewRooms() {
-        allRooms = repo.loadAllRooms("0");
+    private void initializeNewRooms() throws IOException {
+        allRooms = repo.loadAllRooms();
         unusedRooms = new ArrayList<>(allRooms.values());
         placedRooms = new ArrayList<>();
     }
 
     private void initializeStartAndGoalRooms(Position startPosition, Position goalPosition) { 
-        Room goalRoom = allRooms.get(GOAL_ROOM_NUMBER);
+        Room goalRoom = getRoom(GOAL_ROOM_NUMBER);
         unusedRooms.remove(goalRoom);
         placedRooms.add(goalRoom);
         houseGrid[goalPosition.row()][goalPosition.col()] = goalRoom.getRoomNumber();
         goalRoom.setDoorExists(Direction.North.getIndex(), true);
 
-        startingRoom = allRooms.get(2);
+        startingRoom = getRoom(2);
         unusedRooms.remove(startingRoom);
         placedRooms.add(startingRoom);
         houseGrid[startPosition.row()][startPosition.col()] = startingRoom.getRoomNumber();
@@ -65,12 +67,53 @@ public class DungeonManager {
         currentPosition = startPosition;
     }
 
-    public void loadDungeon(String slot) throws IOException {
-        allRooms = repo.loadAllRooms(slot);
+    public void loadDungeon(int slot) throws IOException {
+        allRooms = repo.loadAllRooms();
         DungeonSaveData saveData = repo.loadSaveData(slot);
+        this.houseGrid = saveData.houseGrid;
+        this.currentPosition = saveData.currentPosition;
+        this.startingRoom = getRoom(saveData.startingRoomId);
+        this.blockedDoorChance = saveData.blockedDoorChance;
+        this.roomAmount = saveData.roomAmount;
+        this.unusedRooms = new ArrayList<>();
+        for (Integer roomNumber : saveData.unusedRoomIds) {
+            Room room = getRoom(roomNumber);
+            if(room != null) {
+                unusedRooms.add(room);
+            }
+        }
+        this.placedRooms = new ArrayList<>();
+        for (int i = 0; i < houseGrid.length; i++) {
+            for (int j = 0; j < houseGrid[0].length; j++) {
+                int roomNum = houseGrid[i][j];
+                if (roomNum != 0) {
+                    Room room = getRoom(roomNum);
+                    if (room != null && !placedRooms.contains(room)) {
+                        placedRooms.add(room);
+                    }
+                }
+            }
+        }
+        for (RoomStateData stateData : saveData.roomStates) {
+            Room room = getRoom(stateData.roomNumber);
+            if (room != null) {
+                boolean[] doors = stateData.doors;
+                boolean[] blockedDoors = stateData.blockedDoors;
+                boolean[] lockedDoors = stateData.lockedDoors;
+                for (int k = 0; k < 4; k++) {
+                    room.setDoorExists(k, doors[k]);
+                    room.setBlockedDoor(k, blockedDoors[k]);
+                    room.setLockStatus(k, lockedDoors[k]);
+                }
+                room.updateConnections();
+            }
+        }
+
+        this.currentRoom = getRoom(houseGrid[currentPosition.row()][currentPosition.col()]);
+        currentSaveSlot = slot;
     }
 
-    public void saveDungeon(String slot) throws IOException {
+    public void saveDungeon(int slot) throws IOException {
         repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition, startingRoom.getRoomNumber(), blockedDoorChance, roomAmount);
     }
 
@@ -92,7 +135,7 @@ public class DungeonManager {
             if (!allRooms.containsKey(roomToSave)) {
                 return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
             }
-            if (!placedRooms.contains(allRooms.get(roomToSave))) {
+            if (!placedRooms.contains(getRoom(roomToSave))) {
                 return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_PLACED);
             }
             
@@ -104,9 +147,9 @@ public class DungeonManager {
 
         placedRooms.clear();
         placedRooms.add(startingRoom);
-        placedRooms.add(allRooms.get(GOAL_ROOM_NUMBER));
+        placedRooms.add(getRoom(GOAL_ROOM_NUMBER));
         if(roomToSave != null){
-            placedRooms.add(allRooms.get(roomToSave));
+            placedRooms.add(getRoom(roomToSave));
         }
 
         for (int row = 0; row < houseGrid.length; row++) {
@@ -138,7 +181,7 @@ public class DungeonManager {
         if(roomToSave != null){
             Position pos = getRoomPosition(roomToSave);
             currentPosition = pos;
-            currentRoom = allRooms.get(roomToSave);
+            currentRoom = getRoom(roomToSave);
         } else {
             currentPosition = getRoomPosition(startRoomNum);
             currentRoom = startingRoom;
@@ -162,8 +205,14 @@ public class DungeonManager {
         return null;
     }
 
-    public boolean roomIsPlaced(int roomNumber){
-        return placedRooms.contains(allRooms.get(roomNumber));
+    private boolean isRoomPlaced(int roomNumber){
+        return placedRooms.contains(getRoom(roomNumber));
+    }
+
+    private boolean isInBounds(Position pos) {
+        int row = pos.row();
+        int col = pos.col();
+        return row >= 0 && row < houseGrid.length && col >= 0 && col < houseGrid[0].length;
     }
 
 
@@ -182,11 +231,55 @@ public class DungeonManager {
     
     public int getBlockedDoorChance() { return blockedDoorChance;}
 
+    public Integer getCurrentSaveSlot() { return currentSaveSlot; }
 
-    private boolean isInBounds(Position pos) {
-        int row = pos.row();
-        int col = pos.col();
-        return row >= 0 && row < houseGrid.length && col >= 0 && col < houseGrid[0].length;
+
+
+    /*
+     * Information Retrieval Methods
+     */
+    public List<DoorInfo> getDoorInfo(int doorNumber) {
+        Room room = getRoom(doorNumber);
+        List<DoorInfo> doorInfos = new ArrayList<>();
+        for (Direction dir : Direction.values()) {
+            if(room.doesDoorExist(doorNumber)){
+                int dirIndex = dir.getIndex();
+                boolean exists = room.doesDoorExist(dirIndex);
+                boolean locked = room.isDoorLocked(dirIndex);
+                boolean blocked = room.isDoorBlocked(dirIndex);
+                
+                Position adjacentPosition = getRoomPosition(doorNumber).move(dir);
+                int neighborRoomNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
+                if(neighborRoomNum == 0){
+                    doorInfos.add(new DoorInfo(dir, exists, locked, blocked, 0, null));
+                    continue;
+                }
+                Room neighborRoom = getRoom(neighborRoomNum);
+                doorInfos.add(new DoorInfo(dir, exists, locked, blocked, neighborRoomNum, neighborRoom.getName()));
+            }
+        }
+        return doorInfos;
+    }
+
+    public ArrayList<String> getAllMiniaturesInHouse() {
+        ArrayList<String> miniatures = new ArrayList<>();
+        for (int row = 0; row < houseGrid.length; row++) {
+            for (int col = 0; col < houseGrid[0].length; col++) {
+                int roomNumber = houseGrid[row][col];
+                if (roomNumber != 0) {
+                    Room room = getRoom(roomNumber);
+                    String miniature = room.getMiniature();
+                    if (miniature != null && !miniature.equals("-") && !miniatures.contains(miniature) && !miniature.equalsIgnoreCase("ingen")) {
+                        miniatures.add(miniature);
+                    }
+                }
+            }
+        }
+        return miniatures;
+    }
+
+    public boolean isSlotOccupied(int slot) {
+        return repo.saveExists(slot);
     }
 
 
@@ -277,7 +370,7 @@ public class DungeonManager {
             return new MoveOutcome.NeedsPlacement(options, newPosition);
         }
 
-        Room nextRoom = allRooms.get(nextRoomNumber);
+        Room nextRoom = getRoom(nextRoomNumber);
         currentPosition = newPosition;
         currentRoom = nextRoom;
         return new MoveOutcome.Moved(nextRoom, newPosition);
@@ -343,7 +436,7 @@ public class DungeonManager {
         if(!allRooms.containsKey(roomNumber)){
             return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
         }
-        Room roomToPlace = allRooms.get(roomNumber);
+        Room roomToPlace = getRoom(roomNumber);
         if(!unusedRooms.contains(roomToPlace)){
             return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_IN_POOL);
         }
@@ -365,7 +458,7 @@ public class DungeonManager {
         if(!allRooms.containsKey(roomNumber)){
             return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
         }
-        Room roomToRemove = allRooms.get(roomNumber);
+        Room roomToRemove = getRoom(roomNumber);
         if(!placedRooms.contains(roomToRemove)){
             return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_PLACED);
         }
@@ -388,7 +481,7 @@ public class DungeonManager {
         if(!allRooms.containsKey(roomNumber)){
             return new RoomOutcome.Failed(BlockedReason.INVALID_ROOM_NUMBER);
         }
-        Room roomToRemove = allRooms.get(roomNumber);
+        Room roomToRemove = getRoom(roomNumber);
         if(!unusedRooms.contains(roomToRemove)){
             return new RoomOutcome.Failed(BlockedReason.ROOM_NOT_IN_POOL);
         }

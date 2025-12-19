@@ -1,14 +1,21 @@
+package userInterface;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class Dungeon {
+import model.DungeonManager;
+import model.Room;
+import util.Direction;
+import util.MoveOutcome;
 
+public class DungeonCLI {
+    
     public static void main(String[] args) {
 
         boolean validChoice = false;
         Scanner in = new Scanner(System.in);
-        DungeonManager manager = new DungeonManager(in);
+        DungeonManager manager = new DungeonManager();
 
         while(!validChoice){
 
@@ -20,42 +27,15 @@ public class Dungeon {
             String choice = in.nextLine();
             switch (choice) {
                 case "1":
-                    printWithSeparator("Which slot do you want to load (1 to 5): ");
-                    String slot = in.nextLine();
-                    if(!checkSlot(slot)){
-                        printWithSeparator(slot + " is not a valid slot.");
-                        break;
-                    }
-                    if(manager.emptySlot(slot)){
-                        printWithSeparator(slot + " is empty.");
-                        break;
-                    }
-                    System.out.println("Continuing existing dungeon...");
-                    try {
-                        manager.loadDungeon(slot);
-                        mainMenu(manager, in);
-                        validChoice = true;
-                    } catch (IOException e) {
-                        System.err.println("Error loading dungeon: " + e.getMessage());
-                        break;
-                    }
-                    break;
+                    
                 case "2":
-                    System.out.println("Starting a new dungeon...");
-                    try {
-                        manager.newDungeon();
-                        mainMenu(manager, in);
-                        validChoice = true;
-                    } catch (IOException e) {
-                        System.err.println("Error creating new dungeon: " + e.getMessage());
-                        break;
-                    }
+
                     break;
                 case "3":
-                    handleDeleteSave(manager, in);               
+           
                     break;
                 case "4":
-                    manager.getRoom(-34).getName();
+
                     break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
@@ -70,7 +50,7 @@ public class Dungeon {
             Room currentRoom = manager.getCurrentRoom();
             System.out.println("\n=== Main Menu ===");
             System.out.println("Current Room: " + currentRoom.getRoomNumber() + " (" + currentRoom.getName() + ")");
-            System.out.println("Current Position: (" + manager.getCurrentPosition()[0] + ", " + manager.getCurrentPosition()[1] + ")");
+            System.out.println("Current Position: " + manager.getCurrentPosition());
             System.out.println(manager.describeDoors(currentRoom));
             System.out.println("1. Move to a new room");
             System.out.println("2. View house grid");
@@ -87,7 +67,6 @@ public class Dungeon {
 
             switch (choice) {
                 case "1":
-                    manager.presentRoomOptions();
                     break;
                 case "2":
                     printGrid(manager.getHouseGrid());
@@ -96,7 +75,6 @@ public class Dungeon {
                     printWithSeparator(manager.getCurrentRoom().toString());
                     break;
                 case "4":
-                    manager.unlockDoor();
                     break;
                 case "5":
                     manageRoomsMenu(manager, in);
@@ -117,28 +95,6 @@ public class Dungeon {
                     }
                     break;
                 case "8":
-                    printWithSeparator("Which slot do you want to save on (1 to 5): ");
-                    String slot = in.nextLine();
-                    if(!checkSlot(slot)){
-                        printWithSeparator("Not a valid slot");
-                        break;
-                    }
-                    if(!manager.emptySlot(slot)){
-                        printWithSeparator("Slot is already taken. Do you want to overwrite it? YES to confirm");
-                        String opt = in.nextLine();
-                        if(!opt.equalsIgnoreCase("yes")){
-                            System.out.println("Cancelling...");
-                            break;
-                        }
-                    }
-                    System.out.println("Saving dungeon...");
-                    try {
-                        manager.saveDungeon(slot);
-                        System.out.println("Exiting the manager.");
-                        System.exit(0);
-                    } catch (IOException e) {
-                        printWithSeparator("An error occurred while saving the dungeon: " + e.getMessage());
-                    }
                     break;
                 case "0":
                     printWithSeparator("Exiting without saving.");
@@ -172,11 +128,11 @@ public class Dungeon {
                 printWithSeparator("Chance of blocked door decreased to " + manager.getBlockedDoorChance() + "% ");
                 break;
             case "3":
-                manager.setRoomAmount(3);
+                manager.setRoomAmountToThree();
                 printWithSeparator("Drafting set to 3 rooms.");
                 break;
             case "4":
-                manager.setRoomAmount(5);
+                manager.setRoomAmountToFive();
                 printWithSeparator("Drafting set to 5 rooms.");
                 break;
             case "5":
@@ -208,20 +164,29 @@ public class Dungeon {
 
         String choice = in.nextLine();
 
+        int roomNumber;
+        boolean validInput = false;
+
         switch (choice) {
             case "1":
                 System.out.print("Enter room number: ");
-                int roomNumber;
-                try {
-                    roomNumber = Integer.parseInt(in.nextLine());
-                } catch (NumberFormatException e) {
-                    printWithSeparator("Invalid room number.");
-                    break;
+                String input = in.nextLine();
+                while(!validInput){
+                    if(input.equalsIgnoreCase("c")){
+                        printWithSeparator("Canceled");
+                        break;
+                    }
+                    try {
+                        roomNumber = Integer.parseInt(input);
+                        validInput = true;
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid room number. Please enter a valid integer, or c to cancel: ");
+                    }
                 }
-                int result = manager.goToRoomByNumber(roomNumber);
-                if(result == -1){
+                MoveOutcome outcome = manager.goToRoomByRoomNumber(roomNumber);
+                if(outcome instanceof MoveOutcome.Blocked){
                     printWithSeparator("Invalid room number: " + roomNumber);
-                } else if(result == 1){
+                } else if(outcome instanceof MoveOutcome.Moved){
                     printWithSeparator("Moved to room number: " + roomNumber);
                 } else {
                     printWithSeparator("Room number " + roomNumber + " is not placed in the dungeon yet.");
@@ -229,17 +194,24 @@ public class Dungeon {
                 break;
             case "2":
 
-                System.out.print("Enter room number to place: ");
-                int roomNbr;
-                try {
-                    roomNbr = Integer.parseInt(in.nextLine());
-                } catch (NumberFormatException e) {
-                    printWithSeparator("Invalid room number.");
-                    break;
+                System.out.print("Enter room number to place, or c to cancel: ");
+                validInput = false;
+                input = in.nextLine();
+                while(!validInput){
+                    if(input.equalsIgnoreCase("c")){
+                        printWithSeparator("Canceled");
+                        break;
+                    }
+                    try {
+                        roomNumber = Integer.parseInt(input);
+                        validInput = true;
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid room number. Please enter a valid integer, or c to cancel: ");
+                    }
                 }
                 Room roomToPlace;
                 try {
-                    roomToPlace = manager.getRoom(roomNbr);
+                    roomToPlace = manager.getRoom(roomNumber);
                 } catch (NullPointerException e){
                     printWithSeparator("No such room");
                     break;

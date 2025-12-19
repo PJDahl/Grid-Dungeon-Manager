@@ -1,8 +1,8 @@
-package refactored.util;
+package util;
 
 import java.util.List;
 
-import refactored.model.Room;
+import model.Room;
 
 public interface MoveOutcome {
     

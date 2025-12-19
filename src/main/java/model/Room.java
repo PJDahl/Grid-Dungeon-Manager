@@ -1,3 +1,5 @@
+package model;
+
 import java.util.Arrays;
 
 public class Room {
@@ -32,6 +34,14 @@ public class Room {
 
     public boolean doesDoorExist(int directionIndex) {
         return directionIndex >= 0 && directionIndex < doors.length && doors[directionIndex];
+    }
+
+    public boolean isDoorBlocked(int directionIndex) {
+        return directionIndex >= 0 && directionIndex < blockedDoors.length && blockedDoors[directionIndex];
+    }
+
+    public boolean isDoorLocked(int directionIndex) {
+        return directionIndex >= 0 && directionIndex < lockedDoors.length && lockedDoors[directionIndex];
     }
 
     public void updateConnections() {

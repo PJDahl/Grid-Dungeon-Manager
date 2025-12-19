@@ -1,6 +1,6 @@
-package refactored.util;
+package util;
 
-import refactored.model.Room;
+import model.Room;
 
 public interface RoomOutcome {
     

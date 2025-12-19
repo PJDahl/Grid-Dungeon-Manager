@@ -1,7 +1,7 @@
-package refactored.model;
+package model;
 
 import java.util.List;
-import refactored.util.Position;
+import util.Position;
 
 public class DungeonSaveData {
     public int[][] houseGrid;
