@@ -2,6 +2,9 @@ package model;
 
 import java.util.Arrays;
 
+import util.Direction;
+import util.DoorState;
+
 public class Room {
     
     private final int roomNumber;
@@ -14,10 +17,7 @@ public class Room {
     private final String contents;
     private final String specialEffect;
     private final String miniature;
-    private boolean[] lockedDoors = new boolean[4]; // Array to represent locked status of doors in directions N(0), E(1), S(2), W(3)
-    private boolean[] doors = new boolean[4]; // Array to represent existence of doors in directions N(0), E(1), S(2), W(3)
-    private boolean[] blockedDoors = new boolean[4]; // Array to represent blocked status of doors in directions N(0), E(1), S(2), W(3)
-    private String connections; // e.g., "N,E,S,W" to indicate open connections
+    private DoorState[] doors = new DoorState[]{DoorState.NONE, DoorState.NONE, DoorState.NONE, DoorState.NONE}; // Array to represent existence of doors in directions N(0), E(1), S(2), W(3)
 
     private Room(Builder b) {
         this.roomNumber = b.roomNumber;
@@ -32,60 +32,37 @@ public class Room {
         this.miniature = b.miniature;
     }
 
-    public boolean doesDoorExist(int directionIndex) {
-        return directionIndex >= 0 && directionIndex < doors.length && doors[directionIndex];
+    public DoorState getDoorState(Direction direction) {
+        int index = direction.getIndex();
+        return doors[index];
     }
 
-    public boolean isDoorBlocked(int directionIndex) {
-        return directionIndex >= 0 && directionIndex < blockedDoors.length && blockedDoors[directionIndex];
+    public boolean doesDoorExist(Direction direction) {
+        int index = direction.getIndex();
+        return doors[index] != DoorState.NONE;
     }
 
-    public boolean isDoorLocked(int directionIndex) {
-        return directionIndex >= 0 && directionIndex < lockedDoors.length && lockedDoors[directionIndex];
+    public boolean isDoorBlocked(Direction direction) {
+        int index = direction.getIndex();
+        return doors[index] == DoorState.BLOCKED;
     }
 
-    public void updateConnections() {
-        StringBuilder sb = new StringBuilder();
-        String[] dirLabels = {"N", "E", "S", "W"};
-        for (int i = 0; i < doors.length; i++) {
-            if (doors[i]) {
-                if (sb.length() > 0) {
-                    sb.append(",");
-                }
-                sb.append(dirLabels[i]);
-            }
-        }
-        connections = sb.toString();
+    public boolean isDoorLocked(Direction direction) {
+        int index = direction.getIndex();
+        return doors[index] == DoorState.LOCKED;
     }
 
     /* 
      * Setters
      */
 
-    public void setLockStatus(int directionIndex, boolean lockStatus) {
-        if (directionIndex >= 0 && directionIndex < lockedDoors.length) {
-            lockedDoors[directionIndex] = lockStatus;
+    public boolean setDoorState(Direction direction, DoorState state) {
+        int index = direction.getIndex();
+        if (index >= 0 && index < doors.length) {
+            doors[index] = state;
+            return true;
         }
-    }
-
-    public void setDoors(boolean[] doorLayout) {
-        if (doorLayout != null && doorLayout.length == doors.length) {
-            doors = Arrays.copyOf(doorLayout, doorLayout.length);
-            updateConnections();
-        }
-    }
-
-    public void setDoorExists(int directionIndex, boolean exists) {
-        if (directionIndex>= 0 && directionIndex < doors.length) {
-            doors[directionIndex] = exists;
-            updateConnections();
-        }
-    }
-
-    public void setBlockedDoor(int directionIndex, boolean blocked) {
-        if (directionIndex >= 0 && directionIndex < blockedDoors.length) {
-            blockedDoors[directionIndex] = blocked;
-        }
+        return false;
     }
 
     /* 
@@ -104,7 +81,7 @@ public class Room {
         return name;
     }
 
-    public boolean locked() {
+    public boolean shouldBeLocked() {
         return locked;
     }
 
@@ -132,26 +109,13 @@ public class Room {
         return miniature;
     }
 
-    public boolean[] getLockedDoors() {
-        return Arrays.copyOf(lockedDoors, lockedDoors.length);
-    }
-
-    public boolean[] getDoors() {
+    public DoorState[] getDoors() {
         return Arrays.copyOf(doors, doors.length);
-    }
-
-    public String getConnections() {
-        return connections;
-    }
-
-    public boolean[] getBlockedDoors() {
-        return Arrays.copyOf(blockedDoors, blockedDoors.length);
     }
 
     /*
      * Override Methods
      */
-
 
     @Override
     public String toString() {

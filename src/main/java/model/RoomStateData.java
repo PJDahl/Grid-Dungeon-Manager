@@ -1,17 +1,15 @@
 package model;
 
+import util.DoorState;
+
 public class RoomStateData {
     public int roomNumber;
-    public boolean[] doors;
-    public boolean[] blockedDoors;
-    public boolean[] lockedDoors;
+    public DoorState[] doors;
 
     public RoomStateData() {}
 
-    public RoomStateData(int roomNumber, boolean[] doors, boolean[] blockedDoors, boolean[] lockedDoors) {
+    public RoomStateData(int roomNumber, DoorState[] doors) {
         this.roomNumber = roomNumber;
         this.doors = doors;
-        this.blockedDoors = blockedDoors;
-        this.lockedDoors = lockedDoors;
     }
 }

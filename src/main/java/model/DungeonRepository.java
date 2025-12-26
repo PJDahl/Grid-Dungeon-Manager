@@ -1,7 +1,6 @@
 package model;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +13,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import util.DoorState;
 import util.Position;
 
 public class DungeonRepository {
@@ -55,12 +55,10 @@ public class DungeonRepository {
 
         List<RoomStateData> roomStates = new ArrayList<>();
         for (Room room : allRooms.values()) {
-            boolean[] doors = room.getDoors();
-            boolean[] blockedDoors = room.getBlockedDoors();
-            boolean[] lockedDoors = room.getLockedDoors();
+            DoorState[] doors = room.getDoors();
 
-            if(anyTrue(doors) || anyTrue(blockedDoors) || anyTrue(lockedDoors)) {
-                RoomStateData stateData = new RoomStateData(room.getRoomNumber(), doors, blockedDoors, lockedDoors);
+            if(anyDoor(doors)) {
+                RoomStateData stateData = new RoomStateData(room.getRoomNumber(), doors);
                 roomStates.add(stateData);
             }
         }
@@ -71,9 +69,9 @@ public class DungeonRepository {
         objectMapper.writeValue(filePath.toFile(), saveData);
     }
 
-    private boolean anyTrue(boolean[] array) {
-        for (boolean a : array){
-            if (a) {
+    private boolean anyDoor(DoorState[] array) {
+        for (DoorState a : array){
+            if (a != DoorState.NONE) {
                 return true;
             }
         }

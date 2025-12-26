@@ -3,13 +3,13 @@ package model;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import util.BlockedReason;
 import util.Direction;
+import util.DoorState;
 import util.MoveOutcome;
 import util.Position;
 import util.RoomOutcome;
@@ -53,16 +53,16 @@ public class DungeonManager {
         unusedRooms.remove(goalRoom);
         placedRooms.add(goalRoom);
         houseGrid[goalPosition.row()][goalPosition.col()] = goalRoom.getRoomNumber();
-        goalRoom.setDoorExists(Direction.North.getIndex(), true);
+        goalRoom.setDoorState(Direction.North, DoorState.OPEN);
 
         startingRoom = getRoom(2);
         unusedRooms.remove(startingRoom);
         placedRooms.add(startingRoom);
         houseGrid[startPosition.row()][startPosition.col()] = startingRoom.getRoomNumber();
-        startingRoom.setDoorExists(Direction.North.getIndex(), true);
-        startingRoom.setDoorExists(Direction.East.getIndex(), true);
-        startingRoom.setDoorExists(Direction.West.getIndex(), true);
-        startingRoom.setDoorExists(Direction.South.getIndex(), true);
+        startingRoom.setDoorState(Direction.North, DoorState.OPEN);
+        startingRoom.setDoorState(Direction.East, DoorState.OPEN);
+        startingRoom.setDoorState(Direction.West, DoorState.OPEN);
+        startingRoom.setDoorState(Direction.South, DoorState.OPEN);
         currentRoom = startingRoom;
         currentPosition = startPosition;
     }
@@ -97,15 +97,10 @@ public class DungeonManager {
         for (RoomStateData stateData : saveData.roomStates) {
             Room room = getRoom(stateData.roomNumber);
             if (room != null) {
-                boolean[] doors = stateData.doors;
-                boolean[] blockedDoors = stateData.blockedDoors;
-                boolean[] lockedDoors = stateData.lockedDoors;
+                DoorState[] doors = stateData.doors;
                 for (int k = 0; k < 4; k++) {
-                    room.setDoorExists(k, doors[k]);
-                    room.setBlockedDoor(k, blockedDoors[k]);
-                    room.setLockStatus(k, lockedDoors[k]);
+                    room.setDoorState(Direction.values()[k], doors[k]);
                 }
-                room.updateConnections();
             }
         }
 
@@ -161,18 +156,17 @@ public class DungeonManager {
             }
         }
 
-        for (Room room : allRooms.values()) {
+       for (Room room : allRooms.values()) {
             if (room != null) {
                 if (!roomsToKeep.contains(room.getRoomNumber())) {  
-                    for (int i = 0; i < 4; i++) {
-                        room.setDoorExists(i, false);
-                        room.setLockStatus(i, false);
-                        room.setBlockedDoor(i, false);
+                    for (Direction dir : Direction.values()) {
+                        room.setDoorState(dir, DoorState.NONE);
                     }
-                    room.updateConnections();
                 } else {
-                    for (int i = 0; i < 4; i++){
-                        room.setBlockedDoor(i, false);
+                    for (Direction dir : Direction.values()){
+                        if (room.getDoorState(dir) == DoorState.BLOCKED) {
+                            room.setDoorState(dir, DoorState.OPEN);
+                        }
                     }
                 }      
             }
@@ -233,29 +227,31 @@ public class DungeonManager {
 
     public Integer getCurrentSaveSlot() { return currentSaveSlot; }
 
+    public Room getRoomAtPosition(Position pos) {
+        int roomNumber = houseGrid[pos.row()][pos.col()];
+        return getRoom(roomNumber);
+    }
+
 
 
     /*
      * Information Retrieval Methods
      */
-    public List<DoorInfo> getDoorInfo(int doorNumber) {
-        Room room = getRoom(doorNumber);
+    public List<DoorInfo> getDoorInfo(int roomNumber) {
+        Room room = getRoom(roomNumber);
         List<DoorInfo> doorInfos = new ArrayList<>();
         for (Direction dir : Direction.values()) {
-            if(room.doesDoorExist(doorNumber)){
-                int dirIndex = dir.getIndex();
-                boolean exists = room.doesDoorExist(dirIndex);
-                boolean locked = room.isDoorLocked(dirIndex);
-                boolean blocked = room.isDoorBlocked(dirIndex);
+            if(room.doesDoorExist(dir)){
+                DoorState state = room.getDoorState(dir);
                 
-                Position adjacentPosition = getRoomPosition(doorNumber).move(dir);
+                Position adjacentPosition = getRoomPosition(roomNumber).move(dir);
                 int neighborRoomNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
                 if(neighborRoomNum == 0){
-                    doorInfos.add(new DoorInfo(dir, exists, locked, blocked, 0, null));
+                    doorInfos.add(new DoorInfo(dir, state, 0, null));
                     continue;
                 }
                 Room neighborRoom = getRoom(neighborRoomNum);
-                doorInfos.add(new DoorInfo(dir, exists, locked, blocked, neighborRoomNum, neighborRoom.getName()));
+                doorInfos.add(new DoorInfo(dir, state, neighborRoomNum, neighborRoom.getName()));
             }
         }
         return doorInfos;
@@ -350,14 +346,13 @@ public class DungeonManager {
             return new MoveOutcome.Blocked(BlockedReason.OUT_OF_BOUNDS);
         }
 
-        int dirIndex = direction.getIndex();
-        if (!currentRoom.doesDoorExist(dirIndex)) {
+        if (!currentRoom.doesDoorExist(direction)) {
             return new MoveOutcome.Blocked(BlockedReason.NO_DOOR);
         }
-        if (currentRoom.isDoorBlocked(dirIndex)) {
+        if (currentRoom.isDoorBlocked(direction)) {
             return new MoveOutcome.Blocked(BlockedReason.DOOR_BLOCKED);
         }
-        if (currentRoom.isDoorLocked(dirIndex)) {
+        if (currentRoom.isDoorLocked(direction)) {
             return new MoveOutcome.Blocked(BlockedReason.DOOR_LOCKED);
         }
         
@@ -467,13 +462,9 @@ public class DungeonManager {
         placedRooms.remove(roomToRemove);
         unusedRooms.add(roomToRemove);
 
-        for (int i = 0; i < 4; i++) {
-            roomToRemove.setDoorExists(i, false);
-            roomToRemove.setLockStatus(i, false);
-            roomToRemove.setBlockedDoor(i, false);
+        for (Direction dir : Direction.values()) {
+            roomToRemove.setDoorState(dir, DoorState.NONE);
         }
-        roomToRemove.updateConnections();
-
         return new RoomOutcome.Removed(roomToRemove, roomPosition);
     }
 
@@ -495,7 +486,7 @@ public class DungeonManager {
      * Door Configuration Methods
      */
     private void setDoorsInRoom(Room roomToPlace, Position targetPosition, Direction fromDirection) {
-         roomToPlace.setDoorExists(fromDirection.opposite().getIndex(), true);
+        roomToPlace.setDoorState(fromDirection.opposite(), DoorState.OPEN);
 
         List<Direction> options = new ArrayList<>();
         
@@ -518,8 +509,8 @@ public class DungeonManager {
 
                 Position adjacentPosition = targetPosition.move(direction);
                 int neighborRoomNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
-                if (neighborRoomNum == GOAL_ROOM_NUMBER && getRoom(neighborRoomNum).doesDoorExist(direction.opposite().getIndex())) {
-                    roomToPlace.setDoorExists(direction.getIndex(), true);
+                if (neighborRoomNum == GOAL_ROOM_NUMBER && getRoom(neighborRoomNum).doesDoorExist(direction.opposite())) {
+                    roomToPlace.setDoorState(direction, DoorState.OPEN);
                     doorsToSet--;
                     goalDirection = direction;
                     break;
@@ -537,24 +528,24 @@ public class DungeonManager {
             Position adjacentPosition = targetPosition.move(direction);
             int neighborRoomNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
             if (neighborRoomNum == 0) {
-                roomToPlace.setDoorExists(direction.getIndex(), true);
-                if(roomToPlace.locked()) {
-                    roomToPlace.setLockStatus(direction.getIndex(), true);
+                if(roomToPlace.shouldBeLocked()) {
+                    roomToPlace.setDoorState(direction, DoorState.LOCKED);
+                } else {
+                    roomToPlace.setDoorState(direction, DoorState.OPEN);
                 }
                 doorsToSet--;
             } else {
                 Room neighborRoom = getRoom(neighborRoomNum);
-                if (neighborRoom.doesDoorExist(direction.opposite().getIndex())) {
-                    roomToPlace.setDoorExists(direction.getIndex(), true);
-                    if (neighborRoom.getLockedDoors()[direction.opposite().getIndex()]){
-                        neighborRoom.setLockStatus(direction.opposite().getIndex(), false);
+                if (neighborRoom.doesDoorExist(direction.opposite())) {
+                    roomToPlace.setDoorState(direction, DoorState.OPEN);
+                    if (neighborRoom.isDoorLocked(direction.opposite())){
+                        neighborRoom.setDoorState(direction.opposite(), DoorState.OPEN);
                     }
                     doorsToSet--;
                 } else {
                     int roll = (int)(Math.random() * 100) + 1;
                     if (roll <= blockedDoorChance) {
-                        roomToPlace.setDoorExists(direction.getIndex(), true);
-                        roomToPlace.setBlockedDoor(direction.getIndex(), true);
+                        roomToPlace.setDoorState(direction, DoorState.BLOCKED);
                         doorsToSet--;
                     } else {
                         blockedCandidates.add(direction);
@@ -566,8 +557,7 @@ public class DungeonManager {
         if (doorsToSet > 0 && !blockedCandidates.isEmpty()) {
             for (Direction dir : blockedCandidates) {
                 if (doorsToSet <= 0) break;
-                roomToPlace.setDoorExists(dir.getIndex(), true);
-                roomToPlace.setBlockedDoor(dir.getIndex(), true);
+                roomToPlace.setDoorState(dir, DoorState.BLOCKED);
                 doorsToSet--;
             }
         }
@@ -578,29 +568,25 @@ public class DungeonManager {
                 int neighborNum = houseGrid[adjacentPosition.row()][adjacentPosition.col()];
                 if (neighborNum != 0) {
                     Room neighbor = getRoom(neighborNum);
-                    int neighborDoorIndex = direction.opposite().getIndex();
-                    if (neighbor.doesDoorExist(neighborDoorIndex) && !roomToPlace.doesDoorExist(direction.getIndex())) {
-                        neighbor.setBlockedDoor(neighborDoorIndex, true);
+                    if (neighbor.doesDoorExist(direction.opposite()) && !roomToPlace.doesDoorExist(direction)) {
+                        neighbor.setDoorState(direction.opposite(), DoorState.BLOCKED);
                     }
                 }
             }
         }
-
-        roomToPlace.updateConnections();
     }
 
     public UnlockOutcome unlockDoor(Direction direction) {
-        int dirIndex = direction.getIndex();
-        if (!currentRoom.doesDoorExist(dirIndex)) {
+        if (!currentRoom.doesDoorExist(direction)) {
             return UnlockOutcome.NO_DOOR;
         }
-        if(currentRoom.isDoorBlocked(dirIndex)) {
+        if(currentRoom.isDoorBlocked(direction)) {
             return UnlockOutcome.DOOR_BLOCKED;
         }
-        if (!currentRoom.isDoorLocked(dirIndex)) {
+        if (!currentRoom.isDoorLocked(direction)) {
             return UnlockOutcome.ALREADY_UNLOCKED;
         }
-        currentRoom.setLockStatus(dirIndex, false);
+        currentRoom.setDoorState(direction, DoorState.OPEN);
         return UnlockOutcome.UNLOCKED;
     }
     
