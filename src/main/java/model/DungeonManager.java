@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import userInterface.swing.RoomSnapshot;
 import util.BlockedReason;
 import util.Direction;
 import util.DoorState;
@@ -60,9 +61,19 @@ public class DungeonManager {
         placedRooms.add(startingRoom);
         houseGrid[startPosition.row()][startPosition.col()] = startingRoom.getRoomNumber();
         startingRoom.setDoorState(Direction.North, DoorState.OPEN);
-        startingRoom.setDoorState(Direction.East, DoorState.OPEN);
-        startingRoom.setDoorState(Direction.West, DoorState.OPEN);
+        startingRoom.setDoorState(Direction.East, DoorState.LOCKED);
+        startingRoom.setDoorState(Direction.West, DoorState.BLOCKED);
         startingRoom.setDoorState(Direction.South, DoorState.OPEN);
+
+        Room addedRoom = getRoom(28);
+        unusedRooms.remove(addedRoom);
+        placedRooms.add(addedRoom);
+        houseGrid[startPosition.row()+1][startPosition.col()] = addedRoom.getRoomNumber();
+        addedRoom.setDoorState(Direction.North, DoorState.BLOCKED);
+        addedRoom.setDoorState(Direction.East, DoorState.LOCKED);
+        addedRoom.setDoorState(Direction.South, DoorState.OPEN);
+        addedRoom.setDoorState(Direction.West, DoorState.OPEN);
+
         currentRoom = startingRoom;
         currentPosition = startPosition;
     }
@@ -228,6 +239,9 @@ public class DungeonManager {
     public Integer getCurrentSaveSlot() { return currentSaveSlot; }
 
     public Room getRoomAtPosition(Position pos) {
+        if (!isInBounds(pos)) {
+            return null;
+        }
         int roomNumber = houseGrid[pos.row()][pos.col()];
         return getRoom(roomNumber);
     }
@@ -327,6 +341,48 @@ public class DungeonManager {
     /*
      * Movement and Room handling Methods
      */
+    public RoomSnapshot getRoomSnapshot(Position position) {
+        if (!isInBounds(position)) {
+            return RoomSnapshot.emptySnapshot();
+        }
+
+        int roomNum = houseGrid[position.row()][position.col()];
+        if (roomNum == 0) {
+            return RoomSnapshot.emptySnapshot();
+        }
+
+        Room room = allRooms.get(roomNum);
+        if (room == null) {
+            return RoomSnapshot.emptySnapshot();
+        }
+
+        int[] neighbours = new int[4];
+        neighbours[Direction.North.getIndex()] = roomNumberOrZero(getRoomAtPosition(position.move(Direction.North)));
+        neighbours[Direction.East.getIndex()]  = roomNumberOrZero(getRoomAtPosition(position.move(Direction.East)));
+        neighbours[Direction.South.getIndex()] = roomNumberOrZero(getRoomAtPosition(position.move(Direction.South)));
+        neighbours[Direction.West.getIndex()]  = roomNumberOrZero(getRoomAtPosition(position.move(Direction.West)));
+
+        DoorState[] doors = new DoorState[4];
+        doors[Direction.North.getIndex()] = room.getDoorState(Direction.North);
+        doors[Direction.East.getIndex()]  = room.getDoorState(Direction.East);
+        doors[Direction.South.getIndex()] = room.getDoorState(Direction.South);
+        doors[Direction.West.getIndex()]  = room.getDoorState(Direction.West);
+
+        return new RoomSnapshot(
+                true,
+                room.getRoomNumber(),
+                room.getName(),
+                room.getRoomNumber() == GOAL_ROOM_NUMBER,
+                doors,
+                neighbours
+        );
+    }
+
+    private static int roomNumberOrZero(Room r) {
+        return (r == null) ? 0 : r.getRoomNumber();
+    }
+
+
     public MoveOutcome goToRoomByRoomNumber(int roomNumber) {
         if (!allRooms.containsKey(roomNumber)) {
             return new MoveOutcome.Blocked(BlockedReason.INVALID_ROOM_NUMBER);
