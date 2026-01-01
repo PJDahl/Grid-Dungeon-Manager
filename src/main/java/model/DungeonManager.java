@@ -61,18 +61,9 @@ public class DungeonManager {
         placedRooms.add(startingRoom);
         houseGrid[startPosition.row()][startPosition.col()] = startingRoom.getRoomNumber();
         startingRoom.setDoorState(Direction.North, DoorState.OPEN);
-        startingRoom.setDoorState(Direction.East, DoorState.LOCKED);
-        startingRoom.setDoorState(Direction.West, DoorState.BLOCKED);
+        startingRoom.setDoorState(Direction.East, DoorState.OPEN);
+        startingRoom.setDoorState(Direction.West, DoorState.OPEN);
         startingRoom.setDoorState(Direction.South, DoorState.OPEN);
-
-        Room addedRoom = getRoom(28);
-        unusedRooms.remove(addedRoom);
-        placedRooms.add(addedRoom);
-        houseGrid[startPosition.row()+1][startPosition.col()] = addedRoom.getRoomNumber();
-        addedRoom.setDoorState(Direction.North, DoorState.BLOCKED);
-        addedRoom.setDoorState(Direction.East, DoorState.LOCKED);
-        addedRoom.setDoorState(Direction.South, DoorState.OPEN);
-        addedRoom.setDoorState(Direction.West, DoorState.OPEN);
 
         currentRoom = startingRoom;
         currentPosition = startPosition;

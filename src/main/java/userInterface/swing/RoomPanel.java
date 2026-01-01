@@ -28,7 +28,6 @@ public class RoomPanel extends JPanel {
     public RoomPanel(Position position) {
         this.position = position;
         snapshot = new RoomSnapshot(false, 0, "", false, new DoorState[]{DoorState.NONE, DoorState.NONE, DoorState.NONE, DoorState.NONE}, new int[]{0,0,0,0});
-        setPreferredSize(new Dimension(100, 80));
         setOpaque(true);
 
         addMouseListener(new MouseAdapter() {
