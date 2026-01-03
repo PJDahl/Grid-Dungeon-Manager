@@ -12,6 +12,11 @@ public class RoomPreviewPanel extends JComponent {
         setOpaque(true);
     }
 
+    public void setSnapshot(RoomSnapshot snapshot) {
+        this.snapshot = snapshot;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g0) {
         super.paintComponent(g0);
