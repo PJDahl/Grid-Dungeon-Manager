@@ -6,8 +6,8 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import model.DungeonManager;
-import model.Room;
 
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.io.IOException;
 
@@ -29,22 +29,22 @@ public class SwingDungeon {
         frame.setLayout(new GridLayout(1,2));
         frame.setTitle("Maelirs Dungeon");
 
-        JPanel controlPanel = new JPanel();
-        createDungeonControlDisplay(controlPanel, manager);
-        frame.add(controlPanel);
-
         JPanel mapPanel = new JPanel();
         createDungeonMapDisplay(mapPanel, manager, dungeonGrid);
+
+        JPanel controlPanel = createDungeonControlDisplay(manager, dungeonGrid);
+        frame.add(controlPanel);
         frame.add(mapPanel);
 
-        frame.setSize(1000,600);
+        frame.setSize(1500,800);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
 
     private static void createDungeonMapDisplay(JPanel panel, DungeonManager manager, RoomPanel[][] dungeonGrid) {
+        panel.setFont(new Font("Georgia", Font.PLAIN, 14));
         panel.setLayout(new GridLayout(7,5));
-        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Dungeon Map", TitledBorder.CENTER, TitledBorder.TOP));
+        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Dungeon Map", TitledBorder.CENTER, TitledBorder.TOP, panel.getFont().deriveFont(Font.BOLD, 14f)));
 
         for (int row = 0; row < 7; row++) {
             for (int col = 0; col < 5; col++) {
@@ -60,8 +60,11 @@ public class SwingDungeon {
         dungeonGrid[manager.getCurrentPosition().row()][manager.getCurrentPosition().col()].setCurrent(true);
     }
 
-    private static void createDungeonControlDisplay(JPanel panel, DungeonManager manager) {
-        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"Dungeon Controls", TitledBorder.CENTER, TitledBorder.TOP));
+    private static JPanel createDungeonControlDisplay(DungeonManager manager, RoomPanel[][] dungeonGrid) {
+        RoomSnapshot StartingRoomSnapshot = dungeonGrid[manager.getCurrentPosition().row()][manager.getCurrentPosition().col()].getSnapshot();
+        RoomPreviewPanel previewPanel = new RoomPreviewPanel(StartingRoomSnapshot);
+        ControlPanel controlPanel = new ControlPanel(previewPanel);
+        return controlPanel;
     }
 
     private static void updateDungeonDisplay(RoomPanel[][] dungeonGrid, DungeonManager manager) {
