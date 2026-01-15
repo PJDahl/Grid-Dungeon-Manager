@@ -10,6 +10,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 
 import util.Direction;
@@ -68,7 +69,7 @@ public class ControlPanel extends JPanel {
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BorderLayout());
         bottomPanel.add(middlemanPanel, BorderLayout.NORTH);
-        bottomPanel.add(scrollPane, BorderLayout.SOUTH);
+        bottomPanel.add(scrollPane, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
 
         createDraftingMenu();
@@ -122,7 +123,9 @@ public class ControlPanel extends JPanel {
         northButtonPanel.setLayout(new CardLayout());
         northButtonPanel.add(northButton, "GO");
         northButtonPanel.add(northUnlockButton, "UNLOCK");
-        northButtonPanel.add(new JPanel(), "NONE");
+        JPanel northNothing = new JPanel();
+        northNothing.setPreferredSize(new Dimension(northButton.getPreferredSize().width+30, northButton.getPreferredSize().height));
+        northButtonPanel.add(northNothing, "NONE");
         buttonPanels[0] = northButtonPanel;
 
         JPanel eastButtonPanel = new JPanel();
@@ -136,7 +139,9 @@ public class ControlPanel extends JPanel {
         southButtonPanel.setLayout(new CardLayout());
         southButtonPanel.add(southButton, "GO");
         southButtonPanel.add(southUnlockButton, "UNLOCK");
-        southButtonPanel.add(new JPanel(), "NONE");
+        JPanel southNothing = new JPanel();
+        southNothing.setPreferredSize(new Dimension(southButton.getPreferredSize().width+30, southButton.getPreferredSize().height));
+        southButtonPanel.add(southNothing, "NONE");
         buttonPanels[2] = southButtonPanel;
 
         JPanel westButtonPanel = new JPanel();
@@ -249,11 +254,14 @@ public class ControlPanel extends JPanel {
         infoPanel.setEditable(false);
         infoPanel.setLineWrap(true);
         infoPanel.setWrapStyleWord(true);
-        infoPanel.setPreferredSize(getPreferredSize());
+        infoPanel.setRows(15);
         infoPanel.setCaretColor(infoPanel.getBackground());
         infoPanel.setFont(new Font("Georgia", Font.PLAIN, 16));
         infoPanel.setText("Welcome to Maelir's Dungeon!\nUse the movement buttons to navigate through the dungeon.\nSelect options for the current room or other rooms using the buttons below.\nEnjoy your adventure!");
-        return new JScrollPane(infoPanel);
+        JScrollPane scrollPane = new JScrollPane(infoPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setWheelScrollingEnabled(true);
+        return scrollPane;
     }
 
 
@@ -299,6 +307,7 @@ public class ControlPanel extends JPanel {
 
     public void setInfoPanelText(String text) {
         infoPanel.setText(text);
+        SwingUtilities.invokeLater(() -> infoPanel.setCaretPosition(0));
     }
 
     public void showDraftOptions(boolean show) {
@@ -313,62 +322,40 @@ public class ControlPanel extends JPanel {
      * Event listener methods
      */
     public void onMove(Direction direction, ActionListener listener) {
-        switch (direction) {
-            case North:
-                for (ActionListener al : northButton.getActionListeners()) {
-                    northButton.removeActionListener(al);
-                }
-                northButton.addActionListener(listener);
-                break;
-            case East:
-                for (ActionListener al : eastButton.getActionListeners()) {
-                    eastButton.removeActionListener(al);
-                }
-                eastButton.addActionListener(listener);
-                break;
-            case South:
-                for (ActionListener al : southButton.getActionListeners()) {
-                    southButton.removeActionListener(al);
-                }
-                southButton.addActionListener(listener);
-                break;
-            case West:
-                for (ActionListener al : westButton.getActionListeners()) {
-                    westButton.removeActionListener(al);
-                }
-                westButton.addActionListener(listener);
-                break;
+        JButton button = getButton(direction);
+        for (ActionListener al : button.getActionListeners()) {
+            button.removeActionListener(al);
         }
+        button.addActionListener(listener);
     }
 
-    public void onUnlock(Direction direction, ActionListener listener) {
-        switch (direction) {
-            case North:
-                for (ActionListener al : northUnlockButton.getActionListeners()) {
-                    northUnlockButton.removeActionListener(al);
-                }
-                northUnlockButton.addActionListener(listener);
-                break;
-            case East:
-                for (ActionListener al : eastUnlockButton.getActionListeners()) {
-                    eastUnlockButton.removeActionListener(al);
-                }
-                eastUnlockButton.addActionListener(listener);
-                break;
-            case South:
-                for (ActionListener al : southUnlockButton.getActionListeners()) {
-                    southUnlockButton.removeActionListener(al);
-                }
-                southUnlockButton.addActionListener(listener);
-                break;
-            case West:
-                for (ActionListener al : westUnlockButton.getActionListeners()) {
-                    westUnlockButton.removeActionListener(al);
-                }
-                westUnlockButton.addActionListener(listener);
-                break;
-        }
+    private JButton getButton(Direction direction) {
+        return switch (direction) {
+            case North -> northButton;
+            case East -> eastButton;
+            case South -> southButton;
+            case West -> westButton;
+        };
     }
+
+
+    public void onUnlock(Direction direction, ActionListener listener) {
+        JButton button = getUnlockButton(direction);
+        for (ActionListener al : button.getActionListeners()) {
+            button.removeActionListener(al);
+        }
+        button.addActionListener(listener);
+    }
+
+    private JButton getUnlockButton(Direction direction) {
+        return switch (direction) {
+            case North -> northUnlockButton;
+            case East -> eastUnlockButton;
+            case South -> southUnlockButton;
+            case West -> westUnlockButton;
+        };
+    }
+
 
     public void onSave(ActionListener listener) {
         for (ActionListener al : saveButton.getActionListeners()) {
@@ -377,7 +364,7 @@ public class ControlPanel extends JPanel {
         saveButton.addActionListener(listener);
     }
 
-    public void onLoad(ActionListener listener) {
+    public void onLoad(ActionListener listener) {   
         for (ActionListener al : loadButton.getActionListeners()) {
             loadButton.removeActionListener(al);
         }

@@ -26,8 +26,9 @@ public class DungeonManager {
     private Room currentRoom;
     private Room startingRoom;
     private int blockedDoorChance = 40;
-    private int roomAmount = 3;
+    private int roomOptionsAmount = 3;
     private static final int GOAL_ROOM_NUMBER = 1;
+    private static int NUMBER_OF_ROOMS_IN_DUNGEON;
     private Integer currentSaveSlot = null;
 
 
@@ -41,6 +42,7 @@ public class DungeonManager {
         initializeNewRooms();
         houseGrid = new int[7][5];
         initializeStartAndGoalRooms(startPos, goalPos);
+        NUMBER_OF_ROOMS_IN_DUNGEON = allRooms.size();
     }
 
     private void initializeNewRooms() throws IOException {
@@ -76,7 +78,7 @@ public class DungeonManager {
         this.currentPosition = saveData.currentPosition;
         this.startingRoom = getRoom(saveData.startingRoomId);
         this.blockedDoorChance = saveData.blockedDoorChance;
-        this.roomAmount = saveData.roomAmount;
+        this.roomOptionsAmount = saveData.roomAmount;
         this.unusedRooms = new ArrayList<>();
         for (Integer roomNumber : saveData.unusedRoomIds) {
             Room room = getRoom(roomNumber);
@@ -106,12 +108,13 @@ public class DungeonManager {
             }
         }
 
+        NUMBER_OF_ROOMS_IN_DUNGEON = allRooms.size();
         this.currentRoom = getRoom(houseGrid[currentPosition.row()][currentPosition.col()]);
         currentSaveSlot = slot;
     }
 
     public void saveDungeon(int slot) throws IOException {
-        repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition, startingRoom.getRoomNumber(), blockedDoorChance, roomAmount);
+        repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition, startingRoom.getRoomNumber(), blockedDoorChance, roomOptionsAmount);
     }
 
     public RoomOutcome clearDungeon(Integer roomToSave) {
@@ -229,6 +232,8 @@ public class DungeonManager {
 
     public Integer getCurrentSaveSlot() { return currentSaveSlot; }
 
+    public int getTotalNumberOfRooms() { return NUMBER_OF_ROOMS_IN_DUNGEON; }
+
     public Room getRoomAtPosition(Position pos) {
         if (!isInBounds(pos)) {
             return null;
@@ -307,24 +312,24 @@ public class DungeonManager {
         return blockedDoorChance;
     }
 
-    private void setRoomAmount(int amount) {
+    private void setRoomOptionsAmount(int amount) {
         if (amount < 1) {
-            roomAmount = 1;
+            roomOptionsAmount = 1;
         } else if (amount > 10) {
-            roomAmount = 10;
+            roomOptionsAmount = 10;
         } else {
-            roomAmount = amount;
+            roomOptionsAmount = amount;
         }
     }
 
     public int setRoomAmountToFive() {
-        setRoomAmount(5);
-        return roomAmount;
+        setRoomOptionsAmount(5);
+        return roomOptionsAmount;
     }
 
     public int setRoomAmountToThree() {
-        setRoomAmount(3);
-        return roomAmount;
+        setRoomOptionsAmount(3);
+        return roomOptionsAmount;
     }
 
 
@@ -427,7 +432,7 @@ public class DungeonManager {
         for (Room room : pool) {
             if (checkRoomPrerequisites(room, targetPosition)) {
                 selectedRooms.add(room);
-                if (selectedRooms.size() >= roomAmount) {
+                if (selectedRooms.size() >= roomOptionsAmount) {
                     break;
                 }
             }

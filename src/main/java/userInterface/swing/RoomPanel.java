@@ -4,12 +4,12 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 import util.DoorState;
 import util.Position;
 
-public class RoomPanel extends JComponent {
+public class RoomPanel extends JPanel {
 
     @FunctionalInterface
     public interface RoomClickListener {

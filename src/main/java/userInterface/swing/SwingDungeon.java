@@ -39,6 +39,8 @@ public class SwingDungeon {
         frame.setSize(1500,800);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        SwingController controller = new SwingController(manager, dungeonGrid, (ControlPanel) controlPanel);
+        controller.initialize();
     }
 
     private static void createDungeonMapDisplay(JPanel panel, DungeonManager manager, RoomPanel[][] dungeonGrid) {
