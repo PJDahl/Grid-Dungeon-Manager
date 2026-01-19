@@ -3,6 +3,7 @@ package model;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -190,6 +191,10 @@ public class DungeonManager {
         return new RoomOutcome.Cleared();
     }
 
+    public void deleteSaveFile(int slot) throws IOException {
+        repo.deleteSaveFile(slot);
+    }
+
 
 
     /*
@@ -271,16 +276,16 @@ public class DungeonManager {
         return doorInfos;
     }
 
-    public ArrayList<String> getAllMiniaturesInHouse() {
-        ArrayList<String> miniatures = new ArrayList<>();
+    public HashMap<Room, String> getAllMiniaturesInHouse() {
+        HashMap<Room, String> miniatures = new HashMap<>();
         for (int row = 0; row < houseGrid.length; row++) {
             for (int col = 0; col < houseGrid[0].length; col++) {
                 int roomNumber = houseGrid[row][col];
                 if (roomNumber != 0) {
                     Room room = getRoom(roomNumber);
                     String miniature = room.getMiniature();
-                    if (miniature != null && !miniature.equals("-") && !miniatures.contains(miniature) && !miniature.equalsIgnoreCase("ingen")) {
-                        miniatures.add(miniature);
+                    if (miniature != null && !miniature.equals("-") && !miniature.equalsIgnoreCase("ingen")) {
+                        miniatures.put(room, miniature);
                     }
                 }
             }
@@ -326,12 +331,12 @@ public class DungeonManager {
         }
     }
 
-    public int setRoomAmountToFive() {
+    public int setRoomDraftAmountToFive() {
         setRoomOptionsAmount(5);
         return roomOptionsAmount;
     }
 
-    public int setRoomAmountToThree() {
+    public int setRoomDraftAmountToThree() {
         setRoomOptionsAmount(3);
         return roomOptionsAmount;
     }

@@ -1,0 +1,55 @@
+{
+  "houseGrid" : [ [ 0, 40, 2, 15, 0 ], [ 0, 46, 22, 19, 0 ], [ 0, 36, 45, 27, 0 ], [ 0, 0, 41, 37, 0 ], [ 0, 0, 1, 32, 0 ], [ 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0 ] ],
+  "currentPosition" : {
+    "row" : 4,
+    "col" : 3
+  },
+  "startingPosition" : {
+    "row" : 0,
+    "col" : 2
+  },
+  "startingRoomId" : 2,
+  "blockedDoorChance" : 30,
+  "roomAmount" : 3,
+  "unusedRoomIds" : [ 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 21, 23, 24, 25, 26, 28, 29, 30, 31, 33, 34, 35, 38, 39, 42, 43, 44, 17 ],
+  "roomStates" : [ {
+    "roomNumber" : 1,
+    "doors" : [ "OPEN", "NONE", "NONE", "NONE" ]
+  }, {
+    "roomNumber" : 2,
+    "doors" : [ "OPEN", "BLOCKED", "OPEN", "OPEN" ]
+  }, {
+    "roomNumber" : 15,
+    "doors" : [ "OPEN", "OPEN", "NONE", "NONE" ]
+  }, {
+    "roomNumber" : 19,
+    "doors" : [ "NONE", "NONE", "OPEN", "OPEN" ]
+  }, {
+    "roomNumber" : 22,
+    "doors" : [ "NONE", "OPEN", "OPEN", "NONE" ]
+  }, {
+    "roomNumber" : 27,
+    "doors" : [ "OPEN", "NONE", "NONE", "OPEN" ]
+  }, {
+    "roomNumber" : 32,
+    "doors" : [ "LOCKED", "LOCKED", "OPEN", "NONE" ]
+  }, {
+    "roomNumber" : 36,
+    "doors" : [ "NONE", "OPEN", "OPEN", "OPEN" ]
+  }, {
+    "roomNumber" : 37,
+    "doors" : [ "OPEN", "OPEN", "OPEN", "NONE" ]
+  }, {
+    "roomNumber" : 40,
+    "doors" : [ "OPEN", "OPEN", "NONE", "OPEN" ]
+  }, {
+    "roomNumber" : 41,
+    "doors" : [ "NONE", "BLOCKED", "OPEN", "OPEN" ]
+  }, {
+    "roomNumber" : 45,
+    "doors" : [ "OPEN", "OPEN", "BLOCKED", "OPEN" ]
+  }, {
+    "roomNumber" : 46,
+    "doors" : [ "OPEN", "BLOCKED", "OPEN", "OPEN" ]
+  } ]
+}

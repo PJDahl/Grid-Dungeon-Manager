@@ -3,6 +3,8 @@ package userInterface.swing;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.*;
@@ -11,9 +13,11 @@ import javax.swing.*;
 import model.DungeonManager;
 import model.Room;
 import util.Direction;
+import util.DoorState;
 import util.MoveOutcome;
 import util.Position;
 import util.RoomOutcome;
+import util.UnlockOutcome;
 
 public class SwingController {
     private DungeonManager manager;
@@ -36,6 +40,7 @@ public class SwingController {
         addMainMenuActionListener();
         addMovementActionListeners();
         addRoomOptionsActionListener();
+        addExtrasActionListener();
     }
 
     private void addDungeonMapActionListener() {
@@ -120,7 +125,11 @@ public class SwingController {
                 return;
             }
             choice = (Integer) spinner.getValue();
-            if (manager.isSlotOccupied(choice) && choice != manager.getCurrentSaveSlot()) {
+            Integer currentSaveSlot = manager.getCurrentSaveSlot();
+            if (currentSaveSlot == null) {
+                currentSaveSlot = -1;
+            }
+            if (manager.isSlotOccupied(choice) && choice != currentSaveSlot) {
                 int overwriteChoice = JOptionPane.showConfirmDialog(controlPanel, "Slot " + choice + " is already occupied. Overwrite?", "Confirm Overwrite", JOptionPane.YES_NO_OPTION);
                 if (overwriteChoice != JOptionPane.YES_OPTION) {
                     return;
@@ -156,6 +165,29 @@ public class SwingController {
             setAsSelected(panel, manager.getRoomAtPosition(position), snapshot);
             redrawMap();
         });
+
+        controlPanel.onRemoveSave(listener -> {
+            JSpinner spinner = new JSpinner(new SpinnerNumberModel(1, 1, 5, 1));
+            int choice = JOptionPane.showConfirmDialog(controlPanel, spinner, "Choose save slot to remove", JOptionPane.OK_CANCEL_OPTION);
+            if (choice != JOptionPane.OK_OPTION) {
+                return;
+            }
+            choice = (Integer) spinner.getValue();
+            if (!manager.isSlotOccupied(choice)){
+                JOptionPane.showMessageDialog(controlPanel, "Slot " + choice + " is already empty.", "Remove Save Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(controlPanel, "Are you sure you want to delete save slot " + choice + "? \nThis action cannot be undone.", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) {
+                return;
+            }
+            try {
+                manager.deleteSaveFile(choice);
+                JOptionPane.showMessageDialog(controlPanel, "Save slot " + choice + " deleted successfully.", "Remove Save", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(controlPanel, "Error deleting save file: " + e.getMessage(), "Remove Save Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 
     private void addMovementActionListeners() {
@@ -186,6 +218,31 @@ public class SwingController {
                     setAsCurrent(selectedRoomPanel, room, snapshot);
                     setAsSelected(selectedRoomPanel, room, snapshot);
                     redrawMap();
+                }
+            });
+
+            controlPanel.onUnlock(direction, listener -> {
+                try {
+                    UnlockOutcome outcome = manager.unlockDoor(direction);
+                    if (outcome == UnlockOutcome.UNLOCKED){
+                        controlPanel.setDoorButtonPanel(direction.getIndex(), DoorState.OPEN, true);
+                        redrawMap();
+                        JOptionPane.showMessageDialog(controlPanel, "Door unlocked successfully.", "Unlock Door", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                    else if (outcome == UnlockOutcome.ALREADY_UNLOCKED){
+                        JOptionPane.showMessageDialog(controlPanel, "Door is already unlocked.", "Unlock Door", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                    else if (outcome == UnlockOutcome.NO_DOOR){
+                        JOptionPane.showMessageDialog(controlPanel, "No door in that direction to unlock.", "Unlock Door Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                    else if (outcome == UnlockOutcome.DOOR_BLOCKED){
+                        JOptionPane.showMessageDialog(controlPanel, "Door is blocked and cannot be unlocked.", "Unlock Door Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                    else {
+                        JOptionPane.showMessageDialog(controlPanel, "Could not unlock door: Unknown reason.", "Unlock Door Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(controlPanel, "Error unlocking door: " + e.getMessage(), "Unlock Door Error", JOptionPane.ERROR_MESSAGE);
                 }
             });
         }
@@ -439,6 +496,37 @@ public class SwingController {
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(controlPanel, "Error going to room: " + e.getMessage(), "Go To Room Error", JOptionPane.ERROR_MESSAGE);
             }
+        });
+    }
+
+    private void addExtrasActionListener() {
+        controlPanel.onSetDraftFive(listener -> {
+            manager.setRoomDraftAmountToFive();
+            JOptionPane.showMessageDialog(controlPanel, "Room draft amount set to 5.", "Draft Options", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        controlPanel.onSetDraftThree(listener -> {
+            manager.setRoomDraftAmountToThree();
+            JOptionPane.showMessageDialog(controlPanel, "Room draft amount set to 3.", "Draft Options", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        controlPanel.onIncreaseBlockedChance(listener -> {
+            manager.increaseBlockedDoorChance();
+            JOptionPane.showMessageDialog(controlPanel, "Blocked door chance increased to " + manager.getBlockedDoorChance() + "%.", "Draft Options", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        controlPanel.onDecreaseBlockedChance(listener -> {
+            manager.decreaseBlockedDoorChance();
+            JOptionPane.showMessageDialog(controlPanel, "Blocked door chance decreased to " + manager.getBlockedDoorChance() + "%.", "Draft Options", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        controlPanel.onShowMiniatures(listener -> {
+            HashMap<Room, String> miniatures = manager.getAllMiniaturesInHouse();
+            StringBuilder sb = new StringBuilder();
+            for (Room room: miniatures.keySet()) {
+                sb.append(room.getRoomNumber() + ": " + miniatures.get(room)).append("\n");
+            }
+            controlPanel.setInfoPanelText(sb.toString());
         });
     }
 

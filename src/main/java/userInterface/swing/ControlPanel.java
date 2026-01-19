@@ -18,9 +18,10 @@ import util.DoorState;
 
 public class ControlPanel extends JPanel {
     RoomPreviewPanel roomPanel;
-    JButton saveButton = new JButton("Save Dungeon");
-    JButton loadButton = new JButton("Load Dungeon");
+    JButton saveButton = new JButton("Save");
+    JButton loadButton = new JButton("Load");
     JButton clearButton = new JButton("Clear Dungeon");
+    JButton removeSaveButton = new JButton("Remove a Save File");
     JButton exitButton = new JButton("Exit");
 
     JPanel[] buttonPanels = new JPanel[4]; // North(0), East(1), South(2), West(3)
@@ -94,6 +95,7 @@ public class ControlPanel extends JPanel {
         saveButton.setFont(getFont());
         loadButton.setFont(getFont());
         clearButton.setFont(getFont());
+        removeSaveButton.setFont(getFont());
         exitButton.setFont(getFont());
 
         northButton.setFont(getFont());
@@ -230,6 +232,7 @@ public class ControlPanel extends JPanel {
         mainMenu.add(saveButton);
         mainMenu.add(loadButton);
         mainMenu.add(clearButton);
+        mainMenu.add(removeSaveButton);
         mainMenu.add(exitButton);
         return mainMenu;
     }
@@ -262,7 +265,7 @@ public class ControlPanel extends JPanel {
         infoPanel.setRows(15);
         infoPanel.setCaretColor(infoPanel.getBackground());
         infoPanel.setFont(new Font("Georgia", Font.PLAIN, 16));
-        infoPanel.setText("Welcome to Maelir's Dungeon!\nUse the movement buttons to navigate through the dungeon.\nSelect options for the current room or other rooms using the buttons below.\nEnjoy your adventure!");
+        infoPanel.setText("Welcome to Maelir's Dungeon!\nUse the movement buttons to navigate through the dungeon.\nSelect options for the current room or other rooms using the buttons.\nEnjoy your adventure!");
         JScrollPane scrollPane = new JScrollPane(infoPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setWheelScrollingEnabled(true);
@@ -381,6 +384,13 @@ public class ControlPanel extends JPanel {
             clearButton.removeActionListener(al);
         }
         clearButton.addActionListener(listener);
+    }
+
+    public void onRemoveSave(ActionListener listener) {
+        for (ActionListener al : removeSaveButton.getActionListeners()) {
+            removeSaveButton.removeActionListener(al);
+        }
+        removeSaveButton.addActionListener(listener);
     }
 
     public void onExit(ActionListener listener) {

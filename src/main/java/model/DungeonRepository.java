@@ -79,6 +79,15 @@ public class DungeonRepository {
         return false;
     }
 
+    public void deleteSaveFile(int slot) {
+        Path path = slotPath(slot);
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     /*
