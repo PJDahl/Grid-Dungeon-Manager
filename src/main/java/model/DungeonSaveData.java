@@ -6,6 +6,7 @@ import util.Position;
 public class DungeonSaveData {
     public int[][] houseGrid;
     public Position currentPosition;
+    public Position startingPosition;
     public int startingRoomId;
     public int blockedDoorChance;
     public int roomAmount;

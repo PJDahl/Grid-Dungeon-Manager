@@ -1,22 +1,16 @@
 package userInterface.swing;
 
-import java.awt.Color;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.util.ArrayList;
+import java.awt.FlowLayout;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.JTextArea;
-import javax.swing.SpinnerNumberModel;
+import javax.swing.*;
+
 
 import model.DungeonManager;
 import model.Room;
 import util.Direction;
-import util.DoorState;
 import util.MoveOutcome;
 import util.Position;
 import util.RoomOutcome;
@@ -25,7 +19,6 @@ public class SwingController {
     private DungeonManager manager;
     private RoomPanel[][] dungeonGrid;
     private ControlPanel controlPanel;
-    private Room currentRoom;
     private RoomPanel currentRoomPanel;
     private RoomPanel selectedRoomPanel;
     
@@ -33,8 +26,7 @@ public class SwingController {
         this.manager = manager;
         this.dungeonGrid = dungeonGrid;
         this.controlPanel = controlPanel;
-        this.currentRoom = manager.getCurrentRoom();
-        this.currentRoomPanel = dungeonGrid[manager.getCurrentPosition().row()][manager.getCurrentPosition().col()];
+        this.currentRoomPanel = getPanelAt(manager.getCurrentPosition());
         currentRoomPanel.setCurrent(true);
         this.selectedRoomPanel = currentRoomPanel;
     }
@@ -50,10 +42,10 @@ public class SwingController {
         for (int row = 0; row < dungeonGrid.length; row++) {
             for (int col = 0; col < dungeonGrid[0].length; col++) {
                 Position pos = new Position(row, col);
-                Room room = manager.getRoomAtPosition(pos);
                 RoomPanel roomPanel = dungeonGrid[row][col];
                 roomPanel.setClickListener((position, listener) -> {
-                    RoomPanel clickedPanel = dungeonGrid[position.row()][position.col()];
+                    Room room = manager.getRoomAtPosition(pos);
+                    RoomPanel clickedPanel = getPanelAt(position);
                     if (selectedRoomPanel != null) {
                         selectedRoomPanel.setSelected(false);
                     }
@@ -62,7 +54,7 @@ public class SwingController {
                     RoomSnapshot snapshot = clickedPanel.getSnapshot();
                     controlPanel.setRoomPreviewPanel(snapshot);
                     controlPanel.setRoomOptionsPanel(position.equals(manager.getCurrentPosition()));
-                    boolean current = roomPanel.equals(currentRoomPanel);
+                    boolean current = clickedPanel.equals(currentRoomPanel);
                     for (int i = 0; i < 4; i++) {
                         controlPanel.setDoorButtonPanel(i, snapshot.doors()[i], current);
                     }
@@ -109,6 +101,12 @@ public class SwingController {
             }
             try {
                 manager.loadDungeon(choice);
+                Position currentPosition = manager.getCurrentPosition();
+                Room currentRoom = manager.getCurrentRoom();
+                RoomSnapshot currentSnapshot = manager.getRoomSnapshot(currentPosition);
+                RoomPanel currentPanel = getPanelAt(currentPosition);
+                setAsCurrent(currentPanel, currentRoom, currentSnapshot);
+                setAsSelected(currentPanel, currentRoom, currentSnapshot);
                 redrawMap();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(controlPanel, "Error loading dungeon: " + e.getMessage(), "Load Error", JOptionPane.ERROR_MESSAGE);
@@ -136,17 +134,26 @@ public class SwingController {
         });
 
         controlPanel.onClear(listener -> {
-            JSpinner spinner = new JSpinner(new SpinnerNumberModel(1, 0, manager.getTotalNumberOfRooms(), 1));
+            JSpinner spinner = new JSpinner(new SpinnerNumberModel(0, 0, manager.getTotalNumberOfRooms(), 1));
             int choice = JOptionPane.showConfirmDialog(controlPanel, spinner, "Select room to clear. 0 to clear all", JOptionPane.OK_CANCEL_OPTION);
             if (choice != JOptionPane.OK_OPTION) {
                 return;
             }
             choice = (Integer) spinner.getValue();
+            Position position;
+            RoomSnapshot snapshot;
             if (choice == 0) {
                 manager.clearDungeon();
+                position = manager.getStartingPosition();
+                snapshot = manager.getRoomSnapshot(position);
             } else {
                 manager.clearDungeon(choice);
+                position = manager.getCurrentPosition();
+                snapshot = manager.getRoomSnapshot(position);
             }
+            RoomPanel panel = getPanelAt(position);
+            setAsCurrent(panel, manager.getRoomAtPosition(position), snapshot);
+            setAsSelected(panel, manager.getRoomAtPosition(position), snapshot);
             redrawMap();
         });
     }
@@ -155,57 +162,176 @@ public class SwingController {
         for (Direction direction : Direction.values()) {
             controlPanel.onMove(direction, listener -> {
                 MoveOutcome move = manager.tryToMove(direction);
-                if (move instanceof MoveOutcome.Moved) {  
-                    currentRoomPanel.setCurrent(false);
-                    Position newPosition = manager.getCurrentPosition();
-                    currentRoomPanel = dungeonGrid[newPosition.row()][newPosition.col()];
-                    currentRoomPanel.setCurrent(true);
+                if (move instanceof MoveOutcome.Moved) {
+                    Position newPosition = manager.getCurrentPosition(); ;
                     Room room = manager.getCurrentRoom();
-                    controlPanel.setInfoPanelText(buildRoomInfoText(room));
+                    RoomSnapshot snapshot = manager.getRoomSnapshot(newPosition);
+                    RoomPanel targetPanel = getPanelAt(newPosition);
+                    setAsCurrent(targetPanel, room, snapshot);
+                    setAsSelected(targetPanel, room, snapshot);
                     redrawMap();
                 }
                 else if (move instanceof MoveOutcome.Blocked blocked) {
                     JOptionPane.showMessageDialog(controlPanel, "Could not move: " + blocked.reason(), "Movement Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 } else if (move instanceof MoveOutcome.NeedsPlacement needsPlacement) {
-                    List<Room> options = needsPlacement.options();
-                    List<JPanel> optionPanels = new ArrayList<>();
-                    AtomicInteger chosenRoom = new AtomicInteger(-1);
-                    for (int i = 0; i < options.size(); i++) {
-                        Room option = options.get(i);
-                        RoomSnapshot snapshot = new RoomSnapshot(true, option.getRoomNumber(), option.getDescription(), false, new DoorState[] {DoorState.NONE, DoorState.NONE, DoorState.NONE, DoorState.NONE}, new int[] {0,0,0,0});
-                        RoomPanel optionPanel = new RoomPanel(new Position(-1, -1));
-                        optionPanel.setPreferredSize(new Dimension(200, 160));
-                        optionPanel.setSnapshot(snapshot);
-                        optionPanel.setClickListener((position, e) -> {
-                            chosenRoom.set(option.getRoomNumber());
-                        });
-                        optionPanels.add(optionPanel);
-                    }
-                    JPanel optionsContainer = new JPanel();
-                    for (JPanel panel : optionPanels) {
-                        optionsContainer.add(panel);
-                    }
-                    int choice = JOptionPane.showConfirmDialog(controlPanel, optionsContainer, "Select a room to place", JOptionPane.OK_CANCEL_OPTION);
-                    if (choice != JOptionPane.OK_OPTION) {
+                    Room room = showDraftRoomDialog(needsPlacement.options());
+                    if (room == null) {
                         return;
                     }
-                    if (chosenRoom.get() == -1) {
-                        JOptionPane.showMessageDialog(controlPanel, "No room selected.", "Movement Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    Room newRoom = manager.getRoom(chosenRoom.get());
-                    Position position = manager.getCurrentPosition().move(direction);
-                    manager.placeRoom(newRoom, position, direction, true);
-                    dungeonGrid[position.row()][position.col()].setSnapshot(manager.getRoomSnapshot(position));
-                    currentRoomPanel.setCurrent(false);
-                    currentRoomPanel = dungeonGrid[position.row()][position.col()];
-                    currentRoomPanel.setCurrent(true);
-                    controlPanel.setInfoPanelText(buildRoomInfoText(newRoom));
+                    Position newPosition = needsPlacement.newPosition();
+                    manager.placeRoom(room, newPosition, direction, true);
+                    RoomPanel selectedRoomPanel = getPanelAt(newPosition);
+                    RoomSnapshot snapshot = manager.getRoomSnapshot(newPosition);
+                    setAsCurrent(selectedRoomPanel, room, snapshot);
+                    setAsSelected(selectedRoomPanel, room, snapshot);
                     redrawMap();
                 }
             });
         }
+    }
+
+    private Room showDraftRoomDialog(List<Room> options) {
+        DefaultListModel<Room> model = new DefaultListModel<>();
+        for (Room room : options) {
+            model.addElement(room);
+        }
+
+        JList<Room> list = new JList<>(model);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setVisibleRowCount(model.size());
+        list.setCellRenderer((jList, value, index, isSelected, cellHasFocus) -> {
+            String text = "Room " + value.getRoomNumber() + "- " + value.getName() + "(" + value.getDoorCount() + " doors)";
+            JLabel label = new JLabel(text);
+            label.setOpaque(true);
+            label.setBorder(BorderFactory.createEmptyBorder(6,8,6,8));
+            if (isSelected) {
+                label.setBackground(jList.getSelectionBackground());
+                label.setForeground(jList.getSelectionForeground());
+            } else {
+                label.setBackground(jList.getBackground());
+                label.setForeground(jList.getForeground());
+            }
+            return label;
+        });
+
+        if (model.getSize() > 0) {
+            list.setSelectedIndex(0);
+        }
+
+        JScrollPane scrollPane = new JScrollPane(list);
+        scrollPane.setPreferredSize(new Dimension(300, 200));
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        JTextArea preview = new JTextArea(8, 24);
+        preview.setEditable(false);
+        preview.setLineWrap(true);
+        preview.setWrapStyleWord(true);
+        preview.setBorder(BorderFactory.createTitledBorder("Room Info"));
+        JScrollPane previewScrollPane = new JScrollPane(preview);
+        previewScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        updatePreview(preview, list.getSelectedValue());
+
+        list.addListSelectionListener(e -> {
+            if(!e.getValueIsAdjusting()) {
+                Room selectedRoom = list.getSelectedValue();
+                updatePreview(preview, selectedRoom);
+            }
+        });
+
+        JButton okButton = new JButton("OK");
+        JButton cancelButton = new JButton("Cancel");
+        JButton removeButton = new JButton("Remove Room from pool");
+        removeButton.setToolTipText("Remove the selected room from the global pool. The room can never be drafted again.");
+        okButton.setEnabled(model.getSize() > 0 && list.getSelectedValue() != null);
+
+        list.addListSelectionListener(e -> {
+            okButton.setEnabled(model.getSize() > 0 && list.getSelectedValue() != null);
+        });
+        
+        JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
+        centerPanel.add(scrollPane, BorderLayout.WEST);
+        centerPanel.add(previewScrollPane, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        bottomPanel.add(removeButton);
+
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.add(centerPanel, BorderLayout.CENTER);
+        contentPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        JOptionPane optionPane = new JOptionPane(contentPanel, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[] {okButton, cancelButton}, okButton);
+        JDialog dialog = optionPane.createDialog(controlPanel, "Draft a Room to Place");
+        dialog.setModal(true);
+
+        removeButton.addActionListener(listener -> {
+            Room selectedRoom = list.getSelectedValue();
+            if (selectedRoom == null) {
+                JOptionPane.showMessageDialog(dialog, "Select a room first.", "No selection", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            int result = JOptionPane.showConfirmDialog(dialog, "Are you sure you want to remove " + selectedRoom.getName() + " from the pool?\nThis action cannot be undone.", "Confirm Remove Room", JOptionPane.YES_NO_OPTION);
+
+            if (result != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            RoomOutcome outcome = manager.removeRoomFromPool(selectedRoom.getRoomNumber());
+            if (outcome instanceof RoomOutcome.Failed failed) {
+                JOptionPane.showMessageDialog(dialog, "Could not remove room: " + failed.reason(), "Remove Room Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int selectedIndex = list.getSelectedIndex();
+            model.removeElement(selectedRoom);
+
+            if (model.getSize() > 0) {
+                if (selectedIndex >= model.getSize()) {
+                    selectedIndex = model.getSize() - 1;
+                }
+                list.setSelectedIndex(selectedIndex);
+                list.ensureIndexIsVisible(selectedIndex);
+            } else {
+                preview.setText("No draftable rooms available. \nPress Cancel to exit.");
+                okButton.setEnabled(false);
+                return;
+            }
+        });
+
+        okButton.addActionListener(listener -> {
+            optionPane.setValue(okButton);
+        });
+
+        cancelButton.addActionListener(listener -> {
+            optionPane.setValue(cancelButton);
+        });
+
+        dialog.setVisible(true);
+        dialog.dispose();
+
+        Object selectedValue = optionPane.getValue();
+        if (selectedValue == okButton) {
+            return list.getSelectedValue();
+        } else {
+            return null;
+        }
+    }
+
+    private void updatePreview(JTextArea preview, Room selectedRoom) {
+        if (selectedRoom == null) {
+            preview.setText("No room selected.");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Room ").append(selectedRoom.getRoomNumber()).append(": ").append(selectedRoom.getName()).append("\n");
+        sb.append("Doors: ").append(selectedRoom.getDoorCount()).append("\n\n");
+        if (selectedRoom.getDescription() != null) {
+            sb.append("Description:\n").append(selectedRoom.getDescription());
+        }
+        preview.setText(sb.toString());
+        preview.setCaretPosition(0);
     }
 
     private void addRoomOptionsActionListener() {
@@ -234,7 +360,7 @@ public class SwingController {
                 RoomOutcome outcome = manager.forcePlaceRoom(choice, selectedPosition, firstDoorDirection);
                 if (outcome instanceof RoomOutcome.Placed) {
                     RoomSnapshot snapshot = manager.getRoomSnapshot(selectedPosition);
-                    selectedRoomPanel.setSnapshot(snapshot);
+                    setAsSelected(selectedRoomPanel, manager.getRoom(choice), snapshot);
                     redrawMap();
                     JOptionPane.showMessageDialog(controlPanel, "Room placed successfully.", "Place Room", JOptionPane.INFORMATION_MESSAGE);
                 } else if (outcome instanceof RoomOutcome.Failed failed) {
@@ -297,11 +423,10 @@ public class SwingController {
                 }
                 int roomNumber = room.getRoomNumber();
                 MoveOutcome move = manager.goToRoomByRoomNumber(roomNumber);
-                if (move instanceof MoveOutcome.Moved) {  
-                    currentRoomPanel.setCurrent(false);
-                    currentRoomPanel = selectedRoomPanel;
-                    currentRoomPanel.setCurrent(true);
-                    controlPanel.setInfoPanelText(buildRoomInfoText(room));
+                if (move instanceof MoveOutcome.Moved) {
+                    RoomSnapshot snapshot = manager.getRoomSnapshot(selectedPosition);
+                    setAsCurrent(selectedRoomPanel, room, snapshot);
+                    setAsSelected(selectedRoomPanel, room, snapshot);
                     redrawMap();
                 }
                 else if (move instanceof MoveOutcome.Blocked blocked) {
@@ -317,11 +442,37 @@ public class SwingController {
         });
     }
 
+    private void setAsCurrent(RoomPanel targetPanel, Room room, RoomSnapshot snapshot) {  
+                    currentRoomPanel.setCurrent(false);
+                    currentRoomPanel = targetPanel;
+                    currentRoomPanel.setCurrent(true);
+                    controlPanel.setInfoPanelText(buildRoomInfoText(room));
+    }
+
+    private void setAsSelected(RoomPanel targetPanel, Room room, RoomSnapshot snapshot) {  
+                    selectedRoomPanel.setSelected(false);
+                    selectedRoomPanel = targetPanel;
+                    selectedRoomPanel.setSelected(true);
+
+                    controlPanel.setRoomPreviewPanel(snapshot);
+                    boolean current = targetPanel.equals(currentRoomPanel);
+                    for (int i = 0; i < 4; i++) {
+                        controlPanel.setDoorButtonPanel(i, snapshot.doors()[i], current);
+                    }
+                    controlPanel.setRoomOptionsPanel(current);
+                    controlPanel.setInfoPanelText(buildRoomInfoText(room));
+    }
+
     private void redrawMap(){
         for (int row = 0; row < dungeonGrid.length; row++) {
             for (int col = 0; col < dungeonGrid[0].length; col++) {
+                dungeonGrid[row][col].setSnapshot(manager.getRoomSnapshot(new Position(row, col)));
                 dungeonGrid[row][col].repaint();
             }
         }
+    }
+    
+    private RoomPanel getPanelAt(Position position) {
+        return dungeonGrid[position.row()][position.col()];
     }
 }

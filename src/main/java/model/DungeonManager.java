@@ -25,6 +25,7 @@ public class DungeonManager {
     private Position currentPosition;
     private Room currentRoom;
     private Room startingRoom;
+    private Position startingPosition;
     private int blockedDoorChance = 40;
     private int roomOptionsAmount = 3;
     private static final int GOAL_ROOM_NUMBER = 1;
@@ -38,10 +39,11 @@ public class DungeonManager {
      * Start a new dungeon, load a dungeon, save a dungeon, clear dungeon
      */
 
-    public void newDungeon(Position startPos, Position goalPos) throws IOException {
+    public void newDungeon(Position startPos, Position goalPosition) throws IOException {
+        startingPosition = startPos;
         initializeNewRooms();
         houseGrid = new int[7][5];
-        initializeStartAndGoalRooms(startPos, goalPos);
+        initializeStartAndGoalRooms(goalPosition);
         NUMBER_OF_ROOMS_IN_DUNGEON = allRooms.size();
     }
 
@@ -51,7 +53,7 @@ public class DungeonManager {
         placedRooms = new ArrayList<>();
     }
 
-    private void initializeStartAndGoalRooms(Position startPosition, Position goalPosition) { 
+    private void initializeStartAndGoalRooms(Position goalPosition) { 
         Room goalRoom = getRoom(GOAL_ROOM_NUMBER);
         unusedRooms.remove(goalRoom);
         placedRooms.add(goalRoom);
@@ -61,14 +63,14 @@ public class DungeonManager {
         startingRoom = getRoom(2);
         unusedRooms.remove(startingRoom);
         placedRooms.add(startingRoom);
-        houseGrid[startPosition.row()][startPosition.col()] = startingRoom.getRoomNumber();
+        houseGrid[startingPosition.row()][startingPosition.col()] = startingRoom.getRoomNumber();
         startingRoom.setDoorState(Direction.North, DoorState.OPEN);
         startingRoom.setDoorState(Direction.East, DoorState.OPEN);
         startingRoom.setDoorState(Direction.West, DoorState.OPEN);
         startingRoom.setDoorState(Direction.South, DoorState.OPEN);
 
         currentRoom = startingRoom;
-        currentPosition = startPosition;
+        currentPosition = startingPosition;
     }
 
     public void loadDungeon(int slot) throws IOException {
@@ -114,7 +116,7 @@ public class DungeonManager {
     }
 
     public void saveDungeon(int slot) throws IOException {
-        repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition, startingRoom.getRoomNumber(), blockedDoorChance, roomOptionsAmount);
+        repo.save(slot, allRooms, unusedRooms, houseGrid, currentPosition, startingPosition, startingRoom.getRoomNumber(), blockedDoorChance, roomOptionsAmount);
     }
 
     public RoomOutcome clearDungeon(Integer roomToSave) {
@@ -225,6 +227,8 @@ public class DungeonManager {
     public Room getRoom(int roomNumber){ return allRooms.get(roomNumber);}
 
     public Position getCurrentPosition() { return currentPosition;}
+
+    public Position getStartingPosition() { return startingPosition;}
 
     public Room getCurrentRoom() { return currentRoom;}
     

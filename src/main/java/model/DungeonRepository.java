@@ -39,10 +39,11 @@ public class DungeonRepository {
     }
 
     public void save(int slot, Map<Integer, Room> allRooms, List<Room> unusedRooms, int[][] houseGrid,
-                     Position currentPosition, int startingRoomId, int blockedDoorChance, int roomAmount) throws IOException {
+                     Position currentPosition, Position startingPosition, int startingRoomId, int blockedDoorChance, int roomAmount) throws IOException {
         DungeonSaveData saveData = new DungeonSaveData();
         saveData.houseGrid = houseGrid;
         saveData.currentPosition = currentPosition;
+        saveData.startingPosition = startingPosition;
         saveData.startingRoomId = startingRoomId;
         saveData.blockedDoorChance = blockedDoorChance;
         saveData.roomAmount = roomAmount;

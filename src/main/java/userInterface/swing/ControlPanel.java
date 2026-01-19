@@ -18,7 +18,7 @@ import util.DoorState;
 
 public class ControlPanel extends JPanel {
     RoomPreviewPanel roomPanel;
-    JButton saveButton = new JButton("Save & Exit");
+    JButton saveButton = new JButton("Save Dungeon");
     JButton loadButton = new JButton("Load Dungeon");
     JButton clearButton = new JButton("Clear Dungeon");
     JButton exitButton = new JButton("Exit");
@@ -100,6 +100,11 @@ public class ControlPanel extends JPanel {
         eastButton.setFont(getFont());
         southButton.setFont(getFont());
         westButton.setFont(getFont());
+
+        northUnlockButton.setFont(getFont());
+        eastUnlockButton.setFont(getFont());
+        southUnlockButton.setFont(getFont());
+        westUnlockButton.setFont(getFont());
 
         goToButton.setFont(getFont());
         removeButton.setFont(getFont());
